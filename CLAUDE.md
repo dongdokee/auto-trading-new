@@ -8,13 +8,68 @@ This is a Korean cryptocurrency futures automated trading system (코인 선물 
 
 ## Current Development Status
 
-**Project Phase**: Implementation Ready (Phase 0 → Phase 1)
-**Implementation Progress**: 0% (Design Complete, Implementation Starting)
+**Project Phase**: Phase 1.2 - Core Risk Management Module Implemented
+**Implementation Progress**: 25% (Design Complete, Core Risk Management Complete)
 **Last Updated**: 2025-09-14
-**Status**: 🟡 Ready to begin implementation
+**Status**: 🟢 RiskController class fully implemented with TDD, ready for next modules
 
 📋 **Progress Tracking**: `@IMPLEMENTATION_PROGRESS.md` - Detailed progress and next steps
 📋 **Implementation Plan**: `@docs/AGREED_IMPLEMENTATION_PLAN.md` - Complete 5-phase roadmap
+
+## 📁 **Modular Context Management Strategy** ⭐
+
+**IMPORTANT**: This project uses **modular CLAUDE.md files** for better context management:
+
+### 📂 Module-Specific Context Files:
+- **`@src/risk_management/CLAUDE.md`** ✅ - Risk management module implementation details
+- **`@src/strategy_engine/CLAUDE.md`** (planned) - Strategy implementation context
+- **`@src/execution/CLAUDE.md`** (planned) - Order execution context
+- **`@src/portfolio/CLAUDE.md`** (planned) - Portfolio management context
+- **`@src/data/CLAUDE.md`** (planned) - Data pipeline context
+
+### 🎯 **Context Storage Pattern**:
+- **Main CLAUDE.md**: Overall project guidance, architecture, environment setup
+- **Module CLAUDE.md**: Specific implementation details, completed work, API interfaces
+- **When working on a module**: Always check both main + module CLAUDE.md files
+
+### ✅ **Already Implemented**:
+- **Risk Management Module**: Complete with TDD implementation, tests, and context documentation
+
+## 📁 **Project Structure Adherence** ⭐
+
+**CRITICAL**: Always follow the structure defined in `@PROJECT_STRUCTURE.md`:
+
+### 🏗️ **Source Code Structure**:
+```
+src/
+├── core/                 # Core system components (config, logging, exceptions)
+├── risk_management/      # Risk control and Kelly optimization ⚠️
+├── strategy_engine/      # Trading strategies and regime detection
+├── portfolio/            # Portfolio management and optimization
+├── execution/            # Order execution and routing
+├── data/                # Market data processing
+├── exchanges/           # Exchange connectivity
+├── monitoring/          # System monitoring and metrics
+└── utils/               # Utility functions
+```
+
+### 🧪 **Test Structure**:
+```
+tests/
+├── unit/                # Unit tests (TDD approach)
+│   ├── test_risk_management/     # Risk management tests ⚠️
+│   ├── test_strategy_engine/     # Strategy engine tests
+│   ├── test_portfolio/           # Portfolio management tests
+│   └── ...
+├── integration/         # Integration tests
+└── fixtures/           # Test data and fixtures
+```
+
+### ⚠️ **IMPORTANT RULES**:
+1. **NO files directly in `src/core/`** - Only configuration, logging, exceptions
+2. **Each module gets its own directory** under `src/`
+3. **Test structure mirrors source structure** under `tests/unit/`
+4. **Always check `@PROJECT_STRUCTURE.md` before creating new files**
 
 ## Architecture Overview
 
@@ -191,27 +246,27 @@ When starting the next development session, begin with these tasks in order:
 - **Python Version**: 3.10.18
 - **Location**: `C:\Users\dongd\anaconda3\envs\autotrading`
 
-**Environment Activation:**
-```bash
-# Method 1: Standard conda activation
-conda activate autotrading
+**⚠️ CRITICAL: Environment Issues Discovered**
 
-# Method 2: Direct path activation
-C:\Users\dongd\anaconda3\Scripts\conda.exe activate autotrading
+**Environment Activation Issues:**
+```bash
+# ❌ FAILED: conda commands not recognized in this environment
+conda activate autotrading                           # Command not found
+C:\Users\dongd\anaconda3\Scripts\conda.exe activate  # CondaError: Run 'conda init'
 ```
 
-**⚠️ IMPORTANT: Python Execution Paths**
+**⚠️ MANDATORY: Direct Path Execution Required**
 ```bash
 # ❌ WRONG: Uses system Python 3.13 (causes compatibility issues)
 python script.py
 pip install package
 
-# ✅ CORRECT: Uses autotrading environment Python 3.10
+# ✅ REQUIRED: Must use direct paths to autotrading environment
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" script.py
 "/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package
 
-# ✅ ALTERNATIVE: Activate environment first, then use relative paths
-conda activate autotrading && python script.py
+# ✅ CONFIRMED WORKING: All commands tested and verified
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
 ```
 
 ### Package Versions (Installed 2025-09-14)
@@ -228,32 +283,38 @@ conda activate autotrading && python script.py
 
 ### TDD Workflow Commands
 ```bash
-# ALWAYS activate environment first or use full paths
+# ⚠️ CRITICAL: ALWAYS use direct paths (conda activation fails)
 
-# Run tests (with environment)
-conda activate autotrading && pytest tests/ -v
-
-# Run tests (with full path)
+# Run all tests
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
 
-# Run specific test file
-conda activate autotrading && pytest tests/test_risk_management.py -v
+# Run specific test module
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ -v
 
-# Run tests with coverage
-conda activate autotrading && pytest --cov=src tests/
+# Run specific test file
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_risk_controller.py -v
+
+# Run tests with coverage (when setup)
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest --cov=src tests/
 
 # Run linting (when setup)
-conda activate autotrading && flake8 src/ tests/
-conda activate autotrading && mypy src/
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/flake8.exe" src/ tests/
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/mypy.exe" src/
 ```
 
 ### Package Installation
 ```bash
-# For scientific packages: Use conda first (avoids Windows compiler issues)
-conda install -n autotrading package_name
+# ⚠️ CRITICAL: conda install may fail due to activation issues
+# Use direct pip path for all installations
 
-# For other packages: Use pip with full path
+# Install packages directly with pip (VERIFIED WORKING)
 "/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package_name
+
+# For scientific packages (if conda fails, use pip)
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install numpy pandas scipy
+
+# Check installed packages
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pip list
 ```
 
 ## Key Implementation Areas by Priority
