@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_backtesting/ tests/integration/test_backtesting_integration/ --collect-only -q)"
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"\nfrom src.strategy_engine import StrategyManager, StrategyConfig\nfrom src.risk_management import RiskController, PositionSizer, PositionManager\n\n# Test complete integration\nprint(''=== PHASE 3.1 STRATEGY ENGINE INTEGRATION VALIDATION ==='')\nprint()\n\n# Initialize all systems\nstrategy_manager = StrategyManager()\nrisk_controller = RiskController(initial_capital_usdt=10000.0)\nposition_sizer = PositionSizer(risk_controller)\nposition_manager = PositionManager(risk_controller)\n\nprint(''SUCCESS: Strategy Engine initialized:'', len(strategy_manager.strategies), ''strategies'')\nprint(''SUCCESS: Risk Management initialized: Capital'', risk_controller.initial_capital, ''USDT'')\nprint(''SUCCESS: Position Sizing integrated with Risk Controller'')\nprint(''SUCCESS: Position Management integrated with Risk Controller'')\n\n# Test system status\nstatus = strategy_manager.get_system_status()\nprint()\nprint(''=== SYSTEM STATUS ==='')\nprint(f''Total Strategies: {status[\"\"total_strategies\"\"]}'')\nprint(f''Enabled Strategies: {status[\"\"enabled_strategies\"\"]}'')\nprint(f''Regime Detector: {\"\"Active\"\" if status[\"\"regime_detector_status\"\"] else \"\"Inactive\"\"}'')\n\nprint()\nprint(''PHASE 3.1 STRATEGY ENGINE INTEGRATION COMPLETE!'')\nprint(''Ready for Phase 3.2: Additional Strategies and Portfolio Optimization'')\n\")"
     ],
     "deny": [],
     "ask": []
