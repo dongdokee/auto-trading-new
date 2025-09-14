@@ -24,27 +24,37 @@ Integration Points:
 from typing import Dict, List, Optional, Any
 
 # Core portfolio optimization
-from .portfolio_optimizer import PortfolioOptimizer, OptimizationResult
-from .performance_attributor import PerformanceAttributor, AttributionResult
-from .correlation_analyzer import CorrelationAnalyzer, CorrelationMatrix
-from .adaptive_allocator import AdaptiveAllocator, AllocationUpdate
+from .portfolio_optimizer import PortfolioOptimizer, OptimizationResult, OptimizationConfig
+
+# Performance attribution
+from .performance_attributor import PerformanceAttributor, AttributionResult, AttributionConfig
+
+# Correlation analysis
+from .correlation_analyzer import CorrelationAnalyzer, CorrelationMatrix, CorrelationConfig
+
+# Adaptive allocation
+from .adaptive_allocator import AdaptiveAllocator, AllocationUpdate, AdaptiveConfig
 
 __all__ = [
     # Core optimization
     'PortfolioOptimizer',
     'OptimizationResult',
+    'OptimizationConfig',
 
     # Performance attribution
     'PerformanceAttributor',
     'AttributionResult',
+    'AttributionConfig',
 
     # Correlation analysis
     'CorrelationAnalyzer',
     'CorrelationMatrix',
+    'CorrelationConfig',
 
     # Adaptive allocation
     'AdaptiveAllocator',
     'AllocationUpdate',
+    'AdaptiveConfig',
 ]
 
 __version__ = "1.0.0"
