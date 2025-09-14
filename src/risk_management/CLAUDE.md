@@ -4,18 +4,34 @@ This file provides specific guidance for Claude Code when working on the risk ma
 
 ## Module Overview
 
-**Location**: `src/risk_management/` and `src/core/risk_management.py`
-**Purpose**: Core risk management functionality including Kelly Criterion optimization, VaR monitoring, and position sizing
-**Status**: ✅ **RiskController class fully implemented with TDD + Leverage + Drawdown Monitoring**
-**Last Updated**: 2025-09-14 (Drawdown monitoring system completed)
+**Location**: `src/risk_management/`
+**Purpose**: Complete risk management framework including Kelly Criterion optimization, VaR monitoring, position sizing, and position lifecycle management
+**Status**: ✅ **PHASE 1.2 COMPLETED: Full Risk Management Module with Position Sizing Engine** 🚀
+**Last Updated**: 2025-09-14 (Position Sizing Engine and Position Management completed)
 
 ## ⭐ CRITICAL IMPLEMENTATION CONTEXT ⭐
 
-### 🚀 Successfully Completed: RiskController Class
+### 🚀 Successfully Completed: Complete Risk Management Framework
 
+#### **1. RiskController Class** ✅
 **File**: `src/risk_management/risk_management.py`
 **Tests**: `tests/unit/test_risk_management/test_risk_controller.py` (22 test cases, all passing)
-**Implementation Date**: 2025-09-14 (Updated: Drawdown monitoring system added)
+**Implementation Date**: 2025-09-14 (Drawdown monitoring system completed)
+
+#### **2. PositionSizer Class** ✅ **NEW COMPLETED**
+**File**: `src/risk_management/position_sizing.py`
+**Tests**: `tests/unit/test_risk_management/test_position_sizing.py` (15 test cases, all passing)
+**Implementation Date**: 2025-09-14 (Multi-constraint position sizing engine)
+
+#### **3. PositionManager Class** ✅ **NEW COMPLETED**
+**File**: `src/risk_management/position_management.py`
+**Tests**: `tests/unit/test_risk_management/test_position_management.py` (14 test cases, all passing)
+**Implementation Date**: 2025-09-14 (Complete position lifecycle management)
+
+#### **4. Integration Testing** ✅ **NEW COMPLETED**
+**File**: `tests/integration/test_risk_management_integration.py`
+**Tests**: 6 comprehensive integration tests covering complete workflows
+**Implementation Date**: 2025-09-14 (Multi-component integration validation)
 
 #### **Key Architecture Decisions:**
 
@@ -137,98 +153,351 @@ recovery_stats = risk_controller.get_recovery_statistics()
 - **Regime Awareness**: Market regime parameter for context-aware risk management
 - **USDT Calculations**: Direct integration with position sizing systems
 
-## 🧪 Test Suite
+### 🎉 **NEW: Position Sizing Engine Implementation**
 
-**Location**: `tests/test_risk_management.py`
-**Status**: ✅ All tests passing (22/22) 🌟 **UPDATED**
+#### **PositionSizer Class Architecture** ✅
 
-### Test Coverage:
-1. **Initialization Tests** (3 tests):
-   - `test_should_initialize_with_correct_usdt_capital`
-   - `test_should_set_default_risk_limits_based_on_capital`
-   - `test_should_allow_custom_risk_parameters`
+**Core Concept**: Multi-constraint optimization combining all major risk factors
 
-2. **VaR Limit Tests** (2 tests):
-   - `test_should_detect_var_limit_violation`
-   - `test_should_pass_when_var_within_limit`
+```python
+# Complete position sizing workflow
+position_sizer = PositionSizer(risk_controller)
 
-3. **Kelly Criterion Tests** (4 tests):
-   - `test_should_calculate_kelly_fraction_long_only_default`
-   - `test_should_return_zero_for_negative_returns_long_only`
-   - `test_should_allow_short_positions_when_enabled`
-   - `test_should_return_zero_for_insufficient_data`
+position_size = position_sizer.calculate_position_size(
+    signal={
+        'symbol': 'BTCUSDT',
+        'side': 'LONG',
+        'strength': 0.8,        # Signal strength (0-1)
+        'confidence': 0.7       # Signal confidence (0-1)
+    },
+    market_state={
+        'price': 50000.0,       # Current price (USDT)
+        'atr': 2000.0,          # Average True Range (USDT)
+        'daily_volatility': 0.05, # Daily volatility (5%)
+        'regime': 'NEUTRAL',    # Market regime
+        'min_notional': 10.0,   # Minimum trade size
+        'lot_size': 0.001,      # Exchange lot size
+        'symbol_leverage': 10   # Max leverage for symbol
+    },
+    portfolio_state={
+        'equity': 10000.0,      # Current equity (USDT)
+        'recent_returns': returns_array,  # Recent return history
+        'positions': [],        # Current positions
+        'current_var_usdt': 0.0,  # Current VaR usage
+        'symbol_volatilities': {'BTCUSDT': 0.05},
+        'correlation_matrix': correlation_data
+    }
+)
+# Returns: float - optimal position size in coin units
+```
 
-4. **🚀 COMPLETED: Leverage Management Tests** (6 tests):
-   - `test_should_detect_leverage_limit_violation`
-   - `test_should_pass_when_leverage_within_limit`
-   - `test_should_calculate_total_leverage_correctly`
-   - `test_should_handle_empty_portfolio_leverage`
-   - `test_should_calculate_safe_leverage_for_liquidation_distance`
-   - `test_should_adjust_leverage_for_high_volatility`
+#### **Multi-Constraint Algorithm** 🧮
 
-5. **🌟 NEW: Drawdown Monitoring Tests** (7 tests):
-   - `test_should_update_drawdown_correctly_when_equity_decreases`
-   - `test_should_update_high_water_mark_when_equity_increases`
-   - `test_should_detect_max_drawdown_limit_violation`
-   - `test_should_pass_when_drawdown_within_limit`
-   - `test_should_classify_drawdown_severity_correctly`
-   - `test_should_track_consecutive_loss_days`
-   - `test_should_detect_consecutive_loss_limit_violation`
+The position sizing engine implements sophisticated constraint optimization:
+
+```python
+# 1. Kelly-based sizing (from RiskController)
+kelly_size = kelly_fraction * equity / price
+
+# 2. ATR-based risk sizing (1% equity risk per trade)
+atr_size = (equity * 0.01) / (2.0 * atr)
+
+# 3. Liquidation safety sizing (3-ATR safety margin)
+liquidation_safe_size = safe_leverage * equity / price
+
+# 4. VaR-constrained sizing
+var_size = available_var / (1.65 * volatility * price)
+
+# 5. Final size = minimum of all constraints
+base_size = min(kelly_size, atr_size, liquidation_safe_size, var_size)
+
+# 6. Apply adjustments
+final_size = base_size * correlation_factor * signal_strength
+```
+
+#### **Key Features Implemented**:
+
+1. **Multi-Constraint Optimization**: Combines Kelly, ATR, liquidation safety, and VaR
+2. **Correlation Adjustment**: Reduces size for correlated positions (0.3x-1.0x multiplier)
+3. **Exchange Compliance**: Lot size rounding, minimum notional enforcement
+4. **Maintenance Margin Tiers**: Binance-style tiered margin requirements
+5. **Signal Strength Integration**: Scales position based on signal confidence
+6. **Edge Case Handling**: Zero volatility, insufficient data, extreme scenarios
+
+#### **API Interface**:
+
+```python
+# Main position sizing
+size = position_sizer.calculate_position_size(signal, market_state, portfolio_state)
+
+# Individual sizing methods (for debugging/analysis)
+kelly_size = position_sizer._calculate_kelly_based_size(signal, market_state, portfolio_state)
+atr_size = position_sizer._calculate_atr_based_size(signal, market_state, portfolio_state)
+liquidation_size = position_sizer._calculate_liquidation_safe_size(symbol, side, market_state, portfolio_state)
+var_size = position_sizer._calculate_var_constrained_size(symbol, market_state, portfolio_state)
+correlation_factor = position_sizer._calculate_correlation_adjustment(symbol, portfolio_state)
+```
+
+### 🎉 **NEW: Position Management System**
+
+#### **PositionManager Class Architecture** ✅
+
+**Core Concept**: Complete position lifecycle management with real-time tracking
+
+```python
+# Complete position lifecycle
+position_manager = PositionManager(risk_controller)
+
+# 1. Open position
+position = position_manager.open_position(
+    symbol='BTCUSDT',
+    side='LONG',
+    size=0.1,           # Position size in coin units
+    price=50000.0,      # Entry price
+    leverage=5.0        # Leverage used
+)
+
+# 2. Update position with market prices
+updated_position = position_manager.update_position('BTCUSDT', new_price=52000.0)
+
+# 3. Check stop conditions
+stop_reason = position_manager.check_stop_conditions('BTCUSDT', current_price=48000.0)
+# Returns: 'STOP_LOSS', 'TAKE_PROFIT', 'TRAILING_STOP', or None
+
+# 4. Close position
+closed_position = position_manager.close_position('BTCUSDT', close_price=53000.0, reason='MANUAL')
+```
+
+#### **Position Data Structure**:
+
+```python
+position = {
+    'symbol': 'BTCUSDT',
+    'side': 'LONG',
+    'size': 0.1,
+    'entry_price': 50000.0,
+    'current_price': 52000.0,
+    'leverage': 5.0,
+    'margin': 1000.0,           # Required margin (USDT)
+    'liquidation_price': 45250.0, # Calculated liquidation price
+    'unrealized_pnl': 200.0,    # Current unrealized P&L (USDT)
+    'realized_pnl': 0.0,        # Realized P&L on close
+    'open_time': datetime.now(),
+    'stop_loss': 48000.0,       # Optional stop loss
+    'take_profit': 55000.0,     # Optional take profit
+    'trailing_stop': 49000.0,   # Dynamic trailing stop
+    'trailing_distance': 0.02   # 2% trailing distance
+}
+```
+
+#### **Key Features Implemented**:
+
+1. **Automatic Liquidation Calculation**: For both LONG and SHORT positions
+2. **Real-time P&L Tracking**: Unrealized and realized P&L calculation
+3. **Stop Management**: Stop-loss, take-profit, trailing stop support
+4. **Risk Integration**: Uses RiskController for margin requirements
+5. **Position Lifecycle**: Complete open → update → close workflow
+
+#### **Stop Management System**:
+
+```python
+# Set stops after opening position
+position['stop_loss'] = entry_price * 0.96      # 4% stop loss
+position['take_profit'] = entry_price * 1.10    # 10% take profit
+position['trailing_distance'] = 0.02            # 2% trailing stop
+
+# Automatic stop checking
+stop_reason = position_manager.check_stop_conditions(symbol, current_price)
+if stop_reason:
+    closed_position = position_manager.close_position(symbol, current_price, stop_reason)
+```
+
+## 🧪 Comprehensive Test Suite
+
+**Total Tests**: ✅ 57 tests passing (51 unit + 6 integration) 🎉 **FULLY COMPLETED**
+
+### **Unit Tests** (51 tests)
+**Location**: `tests/unit/test_risk_management/`
+
+#### **1. RiskController Tests** (22 tests) - `test_risk_controller.py`
+- **Initialization Tests** (3 tests): Capital setup, default limits, custom parameters
+- **VaR Limit Tests** (2 tests): Violation detection, within-limit validation
+- **Kelly Criterion Tests** (4 tests): Long-only, short positions, insufficient data
+- **Leverage Management Tests** (6 tests): Violation detection, total leverage, safe limits, volatility adjustment
+- **Drawdown Monitoring Tests** (7 tests): Real-time tracking, severity classification, consecutive loss tracking
+
+#### **2. PositionSizer Tests** (15 tests) - `test_position_sizing.py` ✅ **NEW**
+- **Basic Functionality Tests** (6 tests): Initialization, basic sizing, signal strength, position limits, lot size rounding, insufficient data handling
+- **Constraint-Specific Tests** (4 tests): ATR-based sizing accuracy, VaR-constrained sizing, correlation adjustment, liquidation safety
+- **Edge Case Tests** (3 tests): Zero volatility, zero ATR, minimum constraint selection
+- **Signal Integration Tests** (2 tests): Signal strength scaling, maintenance margin tiers
+
+#### **3. PositionManager Tests** (14 tests) - `test_position_management.py` ✅ **NEW**
+- **Lifecycle Management Tests** (5 tests): Initialization, position opening, closing, nonexistent position handling
+- **P&L Calculation Tests** (2 tests): Long/short position P&L accuracy
+- **Liquidation Price Tests** (2 tests): Long/short liquidation price calculation
+- **Stop Management Tests** (3 tests): Stop-loss detection, take-profit detection, no-stop conditions
+- **Trailing Stop Tests** (2 tests): Long position trailing stop updates, trailing stop persistence
+
+### **Integration Tests** (6 tests) ✅ **NEW**
+**Location**: `tests/integration/test_risk_management_integration.py`
+
+- **Complete Workflow Test** (1 test): Full position lifecycle (sizing → open → update → close)
+- **Multi-Asset Portfolio Test** (1 test): Correlation-adjusted sizing for multiple assets
+- **Risk Limit Enforcement Test** (1 test): VaR budget exhaustion and constraint binding
+- **Leverage Interaction Test** (1 test): Portfolio leverage limits with position sizing
+- **Drawdown Integration Test** (1 test): Real-time drawdown tracking with position P&L
+- **Constraint Validation Test** (1 test): All constraints (Kelly, ATR, VaR, correlation) working together
 
 ### Test Execution Commands:
 ```bash
 # Run all risk management tests
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ -v
 
-# Run specific test
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_risk_controller.py::TestRiskController::test_should_calculate_kelly_fraction_long_only_default -v
+# Run specific test modules
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_risk_controller.py -v
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_position_sizing.py -v
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_position_management.py -v
+
+# Run integration tests
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/test_risk_management_integration.py -v
+
+# Run all tests (unit + integration)
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ tests/integration/test_risk_management_integration.py -v
 ```
 
-## 🚀 Next Implementation Priorities
+## 🎉 **PHASE 1.2 COMPLETED** - Full Risk Management Module 🚀
 
-### Still To Implement (Phase 1.2 completion):
+### ✅ **ALL IMPLEMENTATIONS COMPLETED (2025-09-14)**
 
-1. ~~**Leverage Limit Checking**~~ ✅ **COMPLETED (2025-09-14)**:
+#### 1. ~~**RiskController Class**~~ ✅ **FULLY COMPLETED**:
 ```python
-def check_leverage_limit(self, portfolio_state: Dict) -> List[Tuple[str, float]]:
-    """✅ IMPLEMENTED: Check if total leverage exceeds limits"""
-
-def calculate_safe_leverage_limit(self, portfolio_state: Dict) -> float:
-    """✅ IMPLEMENTED: Calculate safe leverage based on liquidation distance"""
-
-def calculate_volatility_adjusted_leverage(self, base_leverage: float, market_state: Dict) -> float:
-    """✅ IMPLEMENTED: Adjust leverage for market volatility and regime"""
+# Complete risk monitoring and Kelly optimization
+risk_controller = RiskController(initial_capital_usdt=10000.0, ...)
+violations = risk_controller.check_var_limit(portfolio_state)
+kelly_fraction = risk_controller.calculate_optimal_position_fraction(returns)
+leverage_violations = risk_controller.check_leverage_limit(portfolio_state)
+drawdown = risk_controller.update_drawdown(current_equity)
 ```
 
-2. ~~**Drawdown Monitoring**~~ ✅ **COMPLETED (2025-09-14)**:
+#### 2. ~~**Position Sizing Engine**~~ ✅ **NEWLY COMPLETED** 🌟:
+**File**: `src/risk_management/position_sizing.py`
+**Tests**: `tests/unit/test_risk_management/test_position_sizing.py` (15 tests, all passing)
+
 ```python
-def update_drawdown(self, current_equity: float) -> float:
-    """✅ IMPLEMENTED: Update and return current drawdown percentage"""
-
-def check_drawdown_limit(self, current_equity: float) -> List[Tuple[str, float]]:
-    """✅ IMPLEMENTED: Check if drawdown exceeds limits"""
-
-def get_drawdown_severity_level(self) -> str:
-    """✅ IMPLEMENTED: Classify drawdown severity (MILD/MODERATE/SEVERE)"""
-
-def update_consecutive_loss_days(self, daily_pnl: float) -> int:
-    """✅ IMPLEMENTED: Track consecutive loss days"""
-
-def check_consecutive_loss_limit(self) -> List[Tuple[str, int]]:
-    """✅ IMPLEMENTED: Check consecutive loss limit violations"""
-
-def track_drawdown_recovery(self, current_equity: float, current_time=None) -> Optional[int]:
-    """✅ IMPLEMENTED: Track drawdown recovery periods"""
-
-def get_recovery_statistics(self) -> Dict:
-    """✅ IMPLEMENTED: Get comprehensive recovery statistics"""
+# Multi-constraint position sizing combining all risk factors
+position_sizer = PositionSizer(risk_controller)
+position_size = position_sizer.calculate_position_size(
+    signal=signal,           # Trading signal with strength
+    market_state=market_state,   # Price, ATR, volatility
+    portfolio_state=portfolio_state  # Current positions, equity
+)
+# Returns: float - optimal position size respecting ALL constraints
 ```
 
-3. **Position Sizing Engine** - **NEXT PRIORITY**:
+**Key Features**:
+- **Kelly-based sizing**: Integrates RiskController Kelly Criterion
+- **ATR-based risk sizing**: 1% equity risk per trade with ATR stop distance
+- **Liquidation safety**: Maximum size to avoid liquidation (3-ATR safety margin)
+- **VaR constraint**: Position size within available VaR budget
+- **Correlation adjustment**: Reduces size for correlated positions
+- **Maintenance margin tiers**: Binance-style tiered margin requirements
+- **Exchange compliance**: Lot size rounding, minimum notional values
+
+#### 3. ~~**Position Management System**~~ ✅ **NEWLY COMPLETED** 🌟:
+**File**: `src/risk_management/position_management.py`
+**Tests**: `tests/unit/test_risk_management/test_position_management.py` (14 tests, all passing)
+
 ```python
-def calculate_position_size(self, signal: Dict, market_state: Dict, portfolio_state: Dict) -> float:
-    """Calculate optimal position size combining Kelly + ATR + liquidation safety"""
+# Complete position lifecycle management
+position_manager = PositionManager(risk_controller)
+
+# Open position
+position = position_manager.open_position('BTCUSDT', 'LONG', size, price, leverage)
+
+# Update with market prices
+updated_position = position_manager.update_position('BTCUSDT', new_price)
+
+# Check stop conditions
+stop_reason = position_manager.check_stop_conditions('BTCUSDT', current_price)
+# Returns: 'STOP_LOSS', 'TAKE_PROFIT', 'TRAILING_STOP', or None
+
+# Close position
+closed_position = position_manager.close_position('BTCUSDT', close_price, 'MANUAL')
 ```
+
+**Key Features**:
+- **Position lifecycle**: Open → Update → Close workflow
+- **PnL tracking**: Real-time unrealized/realized PnL calculation
+- **Liquidation price**: Automatic calculation for long/short positions
+- **Stop management**: Stop-loss, take-profit, trailing stop support
+- **Risk integration**: Uses RiskController for margin requirements
+
+### 📊 **Complete Test Suite (57 tests, all passing)**:
+- **RiskController**: 22 tests (Kelly, VaR, leverage, drawdown)
+- **PositionSizer**: 15 tests (sizing methods, constraints, edge cases)
+- **PositionManager**: 14 tests (lifecycle, PnL, stops, liquidation)
+- **Integration**: 6 tests (complete workflows, multi-asset, constraints)
+
+### 🎯 **PHASE 1.2 SUCCESS CRITERIA - ALL MET** ✅
+- ✅ Position Sizing Engine fully implemented
+- ✅ All risk constraints integrated (Kelly, ATR, VaR, leverage, correlation)
+- ✅ Position lifecycle management complete
+- ✅ Comprehensive test coverage (57 tests)
+- ✅ Mathematical accuracy validated
+- ✅ Exchange compliance implemented
+- ✅ Ready for Strategy Engine integration
+
+## 🚀 **READY FOR NEXT PHASE: Strategy Engine Integration**
+
+The risk management module is **PRODUCTION-READY** and provides a complete foundation for:
+
+### **Phase 2.1: Strategy Engine Integration** 🎯 **NEXT PRIORITY**
+
+**Integration Points**:
+```python
+# Strategy Engine will call Position Sizing Engine
+from src.risk_management.position_sizing import PositionSizer
+from src.risk_management.position_management import PositionManager
+
+# Strategy generates signals
+strategy_signal = {
+    'symbol': 'BTCUSDT',
+    'side': 'LONG',
+    'strength': 0.8,
+    'confidence': 0.7,
+    'strategy_id': 'momentum_breakout'
+}
+
+# Position Sizer calculates optimal size
+position_size = position_sizer.calculate_position_size(
+    signal=strategy_signal,
+    market_state=current_market_data,
+    portfolio_state=current_portfolio
+)
+
+# Position Manager handles execution
+position = position_manager.open_position(
+    symbol=strategy_signal['symbol'],
+    side=strategy_signal['side'],
+    size=position_size,
+    price=current_price,
+    leverage=calculated_leverage
+)
+```
+
+### **Future Integration Phases**:
+- **Order Execution** (Phase 4.1): Will use `PositionManager` for position lifecycle
+- **Portfolio Optimizer** (Phase 3.2): Will use risk limits and correlation matrices
+- **Backtesting Framework** (Phase 2.2): Will use complete risk management for historical testing
+- **Monitoring System** (Phase 5.1): Will use risk metrics and violation alerts
+
+### **Risk Management API Ready For**:
+- ✅ **Strategy Signal Processing**: Position sizing based on signal strength and confidence
+- ✅ **Multi-Asset Portfolios**: Correlation-aware position sizing and risk limits
+- ✅ **Real-time Risk Monitoring**: VaR, leverage, and drawdown tracking
+- ✅ **Position Lifecycle**: Complete open-to-close position management
+- ✅ **Exchange Integration**: Lot sizes, margin requirements, liquidation calculations
 
 ## 📚 Related Documentation
 
