@@ -19,6 +19,7 @@ class RiskController:
                  concentration_limit: float = 0.2,     # 단일 자산 집중도 20%
                  max_leverage: float = 10.0,           # 최대 레버리지 10x (기본값)
                  liquidation_prob_24h: float = 0.005,  # 24시간 청산 확률 0.5%
+                 max_consecutive_loss_days: int = 7,   # 🚀 NEW: 최대 연속 손실일 (기본값: 7일)
                  allow_short: bool = False):           # 숏 포지션 허용 여부 (기본값: 롱 온리)
 
         self.initial_capital = initial_capital_usdt
@@ -33,12 +34,19 @@ class RiskController:
             'correlation_threshold': correlation_threshold,
             'concentration_limit': concentration_limit,
             'max_leverage': max_leverage,
-            'liquidation_prob_24h': liquidation_prob_24h
+            'liquidation_prob_24h': liquidation_prob_24h,
+            'max_consecutive_loss_days': max_consecutive_loss_days  # 🚀 NEW: 연속 손실일 한도
         }
 
         self.current_drawdown = 0
         self.high_water_mark = initial_capital_usdt
         self.allow_short = allow_short
+
+        # 🚀 NEW: 드로다운 모니터링을 위한 추가 속성
+        self.consecutive_loss_days = 0
+        self.last_daily_pnl = 0.0
+        self.drawdown_start_time = None  # 드로다운 시작 시간
+        self.recovery_periods = []  # 드로다운 복구 기간 기록
 
     def check_var_limit(self, portfolio_state: Dict) -> List[Tuple[str, float]]:
         """VaR 한도 체크"""
@@ -235,3 +243,169 @@ class RiskController:
         max_allowed = self.risk_limits['max_leverage']
 
         return float(max(0.1, min(adjusted_leverage, max_allowed)))
+
+    # ========== 🚀 NEW: 드로다운 모니터링 시스템 ==========
+
+    def update_drawdown(self, current_equity: float) -> float:
+        """
+        현재 자본에 기반해 드로다운 업데이트
+
+        Args:
+            current_equity: 현재 총 자본 (USDT)
+
+        Returns:
+            float: 현재 드로다운 비율 (0.1 = 10% 드로다운)
+        """
+        if current_equity > self.high_water_mark:
+            # 새로운 고점 달성
+            self.high_water_mark = current_equity
+            self.current_drawdown = 0.0
+        else:
+            # 드로다운 계산
+            self.current_drawdown = (self.high_water_mark - current_equity) / self.high_water_mark
+
+        return float(self.current_drawdown)
+
+    def check_drawdown_limit(self, current_equity: float) -> List[Tuple[str, float]]:
+        """
+        드로다운 한도 위반 체크
+
+        Args:
+            current_equity: 현재 총 자본 (USDT)
+
+        Returns:
+            List[Tuple[str, float]]: 위반 목록 (위반 타입, 위반 값)
+        """
+        violations = []
+
+        # 드로다운 업데이트
+        current_drawdown = self.update_drawdown(current_equity)
+        max_drawdown_limit = self.risk_limits['max_drawdown_pct']
+
+        if current_drawdown > max_drawdown_limit:
+            violations.append(('DRAWDOWN', current_drawdown))
+
+        return violations
+
+    def get_drawdown_severity_level(self) -> str:
+        """
+        현재 드로다운의 심각도 분류
+
+        Returns:
+            str: 'MILD' (0-5%), 'MODERATE' (5-10%), 'SEVERE' (10%+)
+        """
+        drawdown_pct = self.current_drawdown
+
+        if drawdown_pct < 0.05:  # 5% 미만
+            return 'MILD'
+        elif drawdown_pct < 0.10:  # 5-10%
+            return 'MODERATE'
+        else:  # 10% 이상
+            return 'SEVERE'
+
+    def update_consecutive_loss_days(self, daily_pnl: float) -> int:
+        """
+        일일 손익을 기반으로 연속 손실일 업데이트
+
+        Args:
+            daily_pnl: 일일 손익 (USDT, 음수면 손실)
+
+        Returns:
+            int: 현재 연속 손실일 수
+        """
+        if daily_pnl < 0:
+            # 손실 날짜
+            self.consecutive_loss_days += 1
+        else:
+            # 수익 날짜 - 연속 손실 스트릭 리셋
+            self.consecutive_loss_days = 0
+
+        self.last_daily_pnl = daily_pnl
+        return self.consecutive_loss_days
+
+    def check_consecutive_loss_limit(self) -> List[Tuple[str, int]]:
+        """
+        연속 손실일 한도 위반 체크
+
+        Returns:
+            List[Tuple[str, int]]: 위반 목록 (위반 타입, 연속 손실일)
+        """
+        violations = []
+        max_consecutive_loss_days = self.risk_limits.get('max_consecutive_loss_days', 7)  # 기본값 7일
+
+        if self.consecutive_loss_days > max_consecutive_loss_days:
+            violations.append(('CONSECUTIVE_LOSS_DAYS', self.consecutive_loss_days))
+
+        return violations
+
+    def track_drawdown_recovery(self, current_equity: float,
+                               current_time=None) -> Optional[int]:
+        """
+        드로다운 복구 추적
+
+        Args:
+            current_equity: 현재 총 자본 (USDT)
+            current_time: 현재 시간 (None이면 현재 시각 사용)
+
+        Returns:
+            Optional[int]: 복구 완료된 경우 복구 기간(일), 아직 복구 중이면 None
+        """
+        from datetime import datetime
+
+        if current_time is None:
+            current_time = datetime.now()
+
+        # 드로다운 업데이트
+        self.update_drawdown(current_equity)
+
+        if self.current_drawdown > 0:
+            # 드로다운 중
+            if self.drawdown_start_time is None:
+                # 드로다운 시작
+                self.drawdown_start_time = current_time
+            return None
+        else:
+            # 드로다운 복구됨
+            if self.drawdown_start_time is not None:
+                # 복구 기간 계산
+                recovery_period_days = (current_time - self.drawdown_start_time).days
+
+                # 복구 기록 저장
+                recovery_record = {
+                    'start_time': self.drawdown_start_time,
+                    'end_time': current_time,
+                    'recovery_days': recovery_period_days,
+                    'recovered_equity': current_equity
+                }
+                self.recovery_periods.append(recovery_record)
+
+                # 드로다운 상태 리셋
+                self.drawdown_start_time = None
+
+                return recovery_period_days
+            return 0  # 드로다운이 없었던 경우
+
+    def get_recovery_statistics(self) -> Dict:
+        """
+        드로다운 복구 통계 반환
+
+        Returns:
+            Dict: 복구 관련 통계
+        """
+        if not self.recovery_periods:
+            return {
+                'total_recoveries': 0,
+                'average_recovery_days': 0.0,
+                'max_recovery_days': 0,
+                'min_recovery_days': 0
+            }
+
+        recovery_days = [period['recovery_days'] for period in self.recovery_periods]
+
+        return {
+            'total_recoveries': len(self.recovery_periods),
+            'average_recovery_days': sum(recovery_days) / len(recovery_days),
+            'max_recovery_days': max(recovery_days),
+            'min_recovery_days': min(recovery_days),
+            'recovery_history': self.recovery_periods.copy()
+        }

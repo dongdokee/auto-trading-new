@@ -349,3 +349,127 @@ class TestRiskController:
         # Then
         assert adjusted_leverage < 5.0  # Should reduce leverage in high volatility
         assert adjusted_leverage > 0.0
+
+    # ========== 🚀 NEW: 드로다운 모니터링 테스트 케이스 ==========
+
+    def test_should_update_drawdown_correctly_when_equity_decreases(self):
+        """자본이 감소할 때 드로다운을 올바르게 업데이트해야 함"""
+        # Given
+        initial_capital = 10000.0
+        risk_controller = RiskController(initial_capital)
+
+        # High water mark starts at 10,000 USDT
+        assert risk_controller.high_water_mark == 10000.0
+        assert risk_controller.current_drawdown == 0.0
+
+        # When - equity drops to 9,000 USDT (10% drawdown)
+        current_drawdown = risk_controller.update_drawdown(9000.0)
+
+        # Then
+        assert current_drawdown == 0.1  # 10% drawdown
+        assert risk_controller.current_drawdown == 0.1
+        assert risk_controller.high_water_mark == 10000.0  # Should remain unchanged
+
+    def test_should_update_high_water_mark_when_equity_increases(self):
+        """자본이 증가할 때 High Water Mark를 업데이트해야 함"""
+        # Given
+        risk_controller = RiskController(10000.0)
+
+        # When - equity increases to 12,000 USDT
+        current_drawdown = risk_controller.update_drawdown(12000.0)
+
+        # Then
+        assert current_drawdown == 0.0  # No drawdown at new high
+        assert risk_controller.current_drawdown == 0.0
+        assert risk_controller.high_water_mark == 12000.0  # Updated to new high
+
+    def test_should_detect_max_drawdown_limit_violation(self):
+        """최대 드로다운 한도 위반을 감지해야 함"""
+        # Given
+        initial_capital = 10000.0
+        max_drawdown = 0.15  # 15% 한도
+        risk_controller = RiskController(
+            initial_capital,
+            max_drawdown_pct=max_drawdown
+        )
+
+        # When - equity drops to 8,000 USDT (20% drawdown > 15% limit)
+        current_equity = 8000.0
+        violations = risk_controller.check_drawdown_limit(current_equity)
+
+        # Then
+        assert len(violations) == 1
+        assert violations[0][0] == 'DRAWDOWN'
+        assert violations[0][1] == 0.2  # 20% drawdown
+
+    def test_should_pass_when_drawdown_within_limit(self):
+        """드로다운이 한도 내에 있을 때는 위반이 없어야 함"""
+        # Given
+        initial_capital = 10000.0
+        max_drawdown = 0.15  # 15% 한도
+        risk_controller = RiskController(
+            initial_capital,
+            max_drawdown_pct=max_drawdown
+        )
+
+        # When - equity drops to 9,000 USDT (10% drawdown < 15% limit)
+        current_equity = 9000.0
+        violations = risk_controller.check_drawdown_limit(current_equity)
+
+        # Then
+        assert len(violations) == 0  # 위반 없음
+
+    def test_should_classify_drawdown_severity_correctly(self):
+        """드로다운 심각도를 올바르게 분류해야 함"""
+        # Given
+        risk_controller = RiskController(10000.0)
+
+        # When & Then - 경미한 드로다운 (3%)
+        risk_controller.update_drawdown(9700.0)
+        assert risk_controller.get_drawdown_severity_level() == 'MILD'  # 0-5%
+
+        # When & Then - 보통 드로다운 (7%)
+        risk_controller.update_drawdown(9300.0)
+        assert risk_controller.get_drawdown_severity_level() == 'MODERATE'  # 5-10%
+
+        # When & Then - 심각한 드로다운 (15%)
+        risk_controller.update_drawdown(8500.0)
+        assert risk_controller.get_drawdown_severity_level() == 'SEVERE'  # 10%+
+
+    def test_should_track_consecutive_loss_days(self):
+        """연속 손실일을 추적해야 함"""
+        # Given
+        risk_controller = RiskController(10000.0)
+
+        # When - 3일 연속 손실
+        consecutive_days_1 = risk_controller.update_consecutive_loss_days(-100.0)  # Day 1: -$100
+        consecutive_days_2 = risk_controller.update_consecutive_loss_days(-50.0)   # Day 2: -$50
+        consecutive_days_3 = risk_controller.update_consecutive_loss_days(-75.0)   # Day 3: -$75
+
+        # Then
+        assert consecutive_days_1 == 1
+        assert consecutive_days_2 == 2
+        assert consecutive_days_3 == 3
+
+        # When - profitable day breaks the streak
+        consecutive_days_4 = risk_controller.update_consecutive_loss_days(200.0)   # Day 4: +$200
+
+        # Then
+        assert consecutive_days_4 == 0  # Streak broken
+
+    def test_should_detect_consecutive_loss_limit_violation(self):
+        """연속 손실일 한도 위반을 감지해야 함"""
+        # Given
+        max_consecutive_loss_days = 5
+        risk_controller = RiskController(10000.0, max_consecutive_loss_days=max_consecutive_loss_days)
+
+        # When - 6일 연속 손실 (한도 5일 초과)
+        for i in range(6):
+            risk_controller.update_consecutive_loss_days(-100.0)
+
+        violations = risk_controller.check_consecutive_loss_limit()
+
+        # Then
+        assert len(violations) == 1
+        assert violations[0][0] == 'CONSECUTIVE_LOSS_DAYS'
+        assert violations[0][1] == 6  # 6일 연속 손실

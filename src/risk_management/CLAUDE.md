@@ -6,16 +6,16 @@ This file provides specific guidance for Claude Code when working on the risk ma
 
 **Location**: `src/risk_management/` and `src/core/risk_management.py`
 **Purpose**: Core risk management functionality including Kelly Criterion optimization, VaR monitoring, and position sizing
-**Status**: ✅ **RiskController class fully implemented with TDD + Leverage Limit Checking**
-**Last Updated**: 2025-09-14 (Leverage system completed)
+**Status**: ✅ **RiskController class fully implemented with TDD + Leverage + Drawdown Monitoring**
+**Last Updated**: 2025-09-14 (Drawdown monitoring system completed)
 
 ## ⭐ CRITICAL IMPLEMENTATION CONTEXT ⭐
 
 ### 🚀 Successfully Completed: RiskController Class
 
 **File**: `src/risk_management/risk_management.py`
-**Tests**: `tests/unit/test_risk_management/test_risk_controller.py` (15 test cases, all passing)
-**Implementation Date**: 2025-09-14 (Updated: Leverage system added)
+**Tests**: `tests/unit/test_risk_management/test_risk_controller.py` (22 test cases, all passing)
+**Implementation Date**: 2025-09-14 (Updated: Drawdown monitoring system added)
 
 #### **Key Architecture Decisions:**
 
@@ -30,6 +30,7 @@ RiskController(
     concentration_limit=0.2,       # Single asset concentration (20%)
     max_leverage=10.0,            # Maximum leverage (default: 10x)
     liquidation_prob_24h=0.005,   # 24h liquidation probability (0.5%)
+    max_consecutive_loss_days=7,  # 🌟 NEW: Max consecutive loss days (default: 7)
     allow_short=False             # Long-only by default, short optional
 )
 ```
@@ -50,12 +51,21 @@ RiskController(
    - Supports both return-based and USDT-based limits
    - Integrated with portfolio state dictionary structure
 
-4. **🚀 NEW: Leverage Limit System** - Advanced leverage management:
+4. **🚀 COMPLETED: Leverage Limit System** - Advanced leverage management:
    - **Basic Leverage Checking**: `check_leverage_limit()` - detects portfolio leverage violations
    - **Total Leverage Calculation**: `_calculate_total_leverage()` - computes portfolio-wide leverage
    - **Safe Leverage Calculation**: `calculate_safe_leverage_limit()` - liquidation distance-based limits
    - **Volatility Adjustment**: `calculate_volatility_adjusted_leverage()` - market regime-aware scaling
    - **Multi-layered Safety**: 3-sigma safety margins, regime-based adjustments, minimum 1x leverage
+
+5. **🌟 NEW: Drawdown Monitoring System** - Comprehensive drawdown tracking:
+   - **Real-time Drawdown Calculation**: `update_drawdown()` - tracks current drawdown vs high water mark
+   - **Drawdown Limit Checking**: `check_drawdown_limit()` - detects max drawdown violations
+   - **Severity Classification**: `get_drawdown_severity_level()` - MILD/MODERATE/SEVERE categories
+   - **Consecutive Loss Tracking**: `update_consecutive_loss_days()` - tracks loss streaks
+   - **Loss Limit Checking**: `check_consecutive_loss_limit()` - detects excessive loss streaks
+   - **Recovery Tracking**: `track_drawdown_recovery()` - measures recovery periods
+   - **Recovery Statistics**: `get_recovery_statistics()` - aggregates recovery data
 
 #### **Critical Technical Patterns:**
 
@@ -88,12 +98,36 @@ leverage_violations = risk_controller.check_leverage_limit(portfolio_state)
 safe_leverage = risk_controller.calculate_safe_leverage_limit(portfolio_state)
 # Returns: float - max safe leverage based on liquidation distances
 
-# 5. 🚀 NEW: Volatility-Adjusted Leverage
+# 5. 🚀 COMPLETED: Volatility-Adjusted Leverage
 adjusted_leverage = risk_controller.calculate_volatility_adjusted_leverage(
     base_leverage=5.0,
     market_state={'daily_volatility': 0.08, 'regime': 'VOLATILE'}
 )
 # Returns: float - leverage adjusted for market conditions
+
+# 6. 🌟 NEW: Drawdown Monitoring
+current_drawdown = risk_controller.update_drawdown(current_equity)
+# Returns: float - current drawdown percentage (0.1 = 10% drawdown)
+
+drawdown_violations = risk_controller.check_drawdown_limit(current_equity)
+# Returns: List[Tuple[str, float]] - drawdown violations
+
+severity = risk_controller.get_drawdown_severity_level()
+# Returns: str - 'MILD' (0-5%), 'MODERATE' (5-10%), 'SEVERE' (10%+)
+
+# 7. 🌟 NEW: Consecutive Loss Tracking
+consecutive_days = risk_controller.update_consecutive_loss_days(daily_pnl)
+# Returns: int - current consecutive loss days
+
+loss_violations = risk_controller.check_consecutive_loss_limit()
+# Returns: List[Tuple[str, int]] - consecutive loss violations
+
+# 8. 🌟 NEW: Recovery Tracking
+recovery_days = risk_controller.track_drawdown_recovery(current_equity, current_time)
+# Returns: Optional[int] - recovery period in days, None if still in drawdown
+
+recovery_stats = risk_controller.get_recovery_statistics()
+# Returns: Dict - comprehensive recovery statistics
 ```
 
 #### **Integration Points:**
@@ -106,7 +140,7 @@ adjusted_leverage = risk_controller.calculate_volatility_adjusted_leverage(
 ## 🧪 Test Suite
 
 **Location**: `tests/test_risk_management.py`
-**Status**: ✅ All tests passing (15/15) 🚀 **UPDATED**
+**Status**: ✅ All tests passing (22/22) 🌟 **UPDATED**
 
 ### Test Coverage:
 1. **Initialization Tests** (3 tests):
@@ -124,13 +158,22 @@ adjusted_leverage = risk_controller.calculate_volatility_adjusted_leverage(
    - `test_should_allow_short_positions_when_enabled`
    - `test_should_return_zero_for_insufficient_data`
 
-4. **🚀 NEW: Leverage Management Tests** (6 tests):
+4. **🚀 COMPLETED: Leverage Management Tests** (6 tests):
    - `test_should_detect_leverage_limit_violation`
    - `test_should_pass_when_leverage_within_limit`
    - `test_should_calculate_total_leverage_correctly`
    - `test_should_handle_empty_portfolio_leverage`
    - `test_should_calculate_safe_leverage_for_liquidation_distance`
    - `test_should_adjust_leverage_for_high_volatility`
+
+5. **🌟 NEW: Drawdown Monitoring Tests** (7 tests):
+   - `test_should_update_drawdown_correctly_when_equity_decreases`
+   - `test_should_update_high_water_mark_when_equity_increases`
+   - `test_should_detect_max_drawdown_limit_violation`
+   - `test_should_pass_when_drawdown_within_limit`
+   - `test_should_classify_drawdown_severity_correctly`
+   - `test_should_track_consecutive_loss_days`
+   - `test_should_detect_consecutive_loss_limit_violation`
 
 ### Test Execution Commands:
 ```bash
@@ -157,13 +200,31 @@ def calculate_volatility_adjusted_leverage(self, base_leverage: float, market_st
     """✅ IMPLEMENTED: Adjust leverage for market volatility and regime"""
 ```
 
-2. **Drawdown Monitoring** - **NEXT PRIORITY**:
+2. ~~**Drawdown Monitoring**~~ ✅ **COMPLETED (2025-09-14)**:
 ```python
 def update_drawdown(self, current_equity: float) -> float:
-    """Update and return current drawdown percentage"""
+    """✅ IMPLEMENTED: Update and return current drawdown percentage"""
+
+def check_drawdown_limit(self, current_equity: float) -> List[Tuple[str, float]]:
+    """✅ IMPLEMENTED: Check if drawdown exceeds limits"""
+
+def get_drawdown_severity_level(self) -> str:
+    """✅ IMPLEMENTED: Classify drawdown severity (MILD/MODERATE/SEVERE)"""
+
+def update_consecutive_loss_days(self, daily_pnl: float) -> int:
+    """✅ IMPLEMENTED: Track consecutive loss days"""
+
+def check_consecutive_loss_limit(self) -> List[Tuple[str, int]]:
+    """✅ IMPLEMENTED: Check consecutive loss limit violations"""
+
+def track_drawdown_recovery(self, current_equity: float, current_time=None) -> Optional[int]:
+    """✅ IMPLEMENTED: Track drawdown recovery periods"""
+
+def get_recovery_statistics(self) -> Dict:
+    """✅ IMPLEMENTED: Get comprehensive recovery statistics"""
 ```
 
-3. **Position Sizing Engine**:
+3. **Position Sizing Engine** - **NEXT PRIORITY**:
 ```python
 def calculate_position_size(self, signal: Dict, market_state: Dict, portfolio_state: Dict) -> float:
     """Calculate optimal position size combining Kelly + ATR + liquidation safety"""
@@ -204,5 +265,5 @@ When extending this module:
 
 ---
 **Module Maintainer**: Risk Management Team
-**Last Implementation**: RiskController class (2025-09-14)
-**Next Priority**: Leverage checking and drawdown monitoring
+**Last Implementation**: Drawdown Monitoring System (2025-09-14)
+**Next Priority**: Position Sizing Engine

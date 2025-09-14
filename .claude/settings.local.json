@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py::TestRiskController::test_should_update_drawdown_correctly_when_equity_decreases -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py -k \"drawdown or consecutive\" -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py::TestRiskController::test_should_update_high_water_mark_when_equity_increases -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py -v)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
