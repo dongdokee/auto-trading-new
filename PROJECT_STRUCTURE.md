@@ -208,23 +208,12 @@ AutoTradingNew/
 - Audit logging for all trading activities
 - Backup and disaster recovery procedures
 
-## 🚀 Environment Setup & Commands ⭐ **SINGLE SOURCE OF TRUTH**
+## 🚀 Development Environment
 
-### **Environment Setup** ✅ **COMPLETED (2025-09-14)**
+**📋 Complete Environment Guide**: `@ENVIRONMENT.md` - Python setup, all commands, troubleshooting, package management
+**Status**: ✅ Anaconda environment `autotrading` (Python 3.10.18) configured and fully tested
+**Quick Reference**: Use direct paths for all commands (conda activation issues resolved with direct execution)
 
-**🎯 CRITICAL: Use Anaconda Environment**
-- **Environment Name**: `autotrading`
-- **Python Version**: 3.10.18
-- **Location**: `C:\Users\dongd\anaconda3\envs\autotrading`
-
-**⚠️ CRITICAL: Environment Issues Discovered**
-
-**Environment Activation Issues:**
-```bash
-# ❌ FAILED: conda commands not recognized in this environment
-conda activate autotrading                           # Command not found
-C:\Users\dongd\anaconda3\Scripts\conda.exe activate  # CondaError: Run 'conda init'
-```
 
 **⚠️ MANDATORY: Direct Path Execution Required**
 ```bash
