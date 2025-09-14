@@ -4,17 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Korean cryptocurrency futures automated trading system (코인 선물 자동매매 시스템) currently transitioning from design phase to implementation. The system implements advanced quantitative trading strategies with sophisticated risk management and portfolio optimization.
+This is a Korean cryptocurrency futures automated trading system (코인 선물 자동매매 시스템) implementing advanced quantitative trading strategies with sophisticated risk management and portfolio optimization.
 
-## Current Development Status
+## 📚 **Document Navigation Map** ⭐ **SINGLE SOURCE OF TRUTH**
 
-**Project Phase**: Phase 1.2 - Core Risk Management Module Implemented
-**Implementation Progress**: 25% (Design Complete, Core Risk Management Complete)
-**Last Updated**: 2025-09-14
-**Status**: 🟢 RiskController class fully implemented with TDD, ready for next modules
+### **📋 Core Documentation**
+- **📊 Progress & Status**: `@IMPLEMENTATION_PROGRESS.md` - Current phase, completed work, next priorities
+- **🏗️ Structure & Environment**: `@PROJECT_STRUCTURE.md` - Complete structure, tech stack, commands
+- **🗺️ Implementation Roadmap**: `@docs/AGREED_IMPLEMENTATION_PLAN.md` - 5-phase development plan
 
-📋 **Progress Tracking**: `@IMPLEMENTATION_PROGRESS.md` - Detailed progress and next steps
-📋 **Implementation Plan**: `@docs/AGREED_IMPLEMENTATION_PLAN.md` - Complete 5-phase roadmap
+### **📂 Module-Specific Implementation Details**
+- **⚠️ Risk Management**: `@src/risk_management/CLAUDE.md` - Complete risk framework (RiskController, PositionSizer, PositionManager)
+- **📈 Strategy Engine**: `@src/strategy_engine/CLAUDE.md` - (planned)
+- **⚡ Order Execution**: `@src/execution/CLAUDE.md` - (planned)
+- **💼 Portfolio Management**: `@src/portfolio/CLAUDE.md` - (planned)
+
+### **📖 Technical Specifications**
+- **🏛️ System Architecture**: `@docs/project-system-architecture.md` - C4 model, components
+- **💰 Financial Engineering**: `@docs/project-system-design/2-financial-engineering.md` - Kelly Criterion, VaR models
+- **🧪 TDD Methodology**: `@docs/augmented-coding.md` - Development discipline
+- **🔧 Engineering Guide**: `@docs/software-engineering-guide.md` - Best practices
 
 ## 📁 **Modular Context Management Strategy** ⭐
 
@@ -37,33 +46,7 @@ This is a Korean cryptocurrency futures automated trading system (코인 선물 
 
 ## 📁 **Project Structure Adherence** ⭐
 
-**CRITICAL**: Always follow the structure defined in `@PROJECT_STRUCTURE.md`:
-
-### 🏗️ **Source Code Structure**:
-```
-src/
-├── core/                 # Core system components (config, logging, exceptions)
-├── risk_management/      # Risk control and Kelly optimization ⚠️
-├── strategy_engine/      # Trading strategies and regime detection
-├── portfolio/            # Portfolio management and optimization
-├── execution/            # Order execution and routing
-├── data/                # Market data processing
-├── exchanges/           # Exchange connectivity
-├── monitoring/          # System monitoring and metrics
-└── utils/               # Utility functions
-```
-
-### 🧪 **Test Structure**:
-```
-tests/
-├── unit/                # Unit tests (TDD approach)
-│   ├── test_risk_management/     # Risk management tests ⚠️
-│   ├── test_strategy_engine/     # Strategy engine tests
-│   ├── test_portfolio/           # Portfolio management tests
-│   └── ...
-├── integration/         # Integration tests
-└── fixtures/           # Test data and fixtures
-```
+**CRITICAL**: Always follow the structure defined in `@PROJECT_STRUCTURE.md`
 
 ### ⚠️ **IMPORTANT RULES**:
 1. **NO files directly in `src/core/`** - Only configuration, logging, exceptions
@@ -71,31 +54,14 @@ tests/
 3. **Test structure mirrors source structure** under `tests/unit/`
 4. **Always check `@PROJECT_STRUCTURE.md` before creating new files**
 
+**For complete project structure details**: 📋 `@PROJECT_STRUCTURE.md`
+
 ## Architecture Overview
 
-The system follows a microservices architecture with these main components:
+The system follows a microservices architecture with event-driven patterns, CQRS, and hexagonal architecture principles.
 
-- **Trading Engine**: Main coordination hub using Python/asyncio
-- **Risk Manager**: Kelly optimization and VaR-based risk control
-- **Strategy Engine**: Multi-strategy execution with regime detection
-- **Order Executor**: Smart order routing and execution
-- **Data Feed Service**: Real-time market data collection
-- **Infrastructure**: PostgreSQL, TimescaleDB, Redis, RabbitMQ
-
-Key architectural patterns:
-- Event-driven architecture for loose coupling
-- CQRS (Command Query Responsibility Segregation) for data operations
-- Hexagonal architecture for clean separation of concerns
-
-📋 **Architecture Reference**: `@docs/project-system-architecture.md` - Complete C4 model documentation
-
-## Technology Stack
-
-- **Backend**: Python 3.10+, asyncio for concurrency
-- **Databases**: PostgreSQL (transactional data), TimescaleDB (time series), Redis (caching/state)
-- **Communication**: gRPC for inter-service, WebSocket for market data
-- **Monitoring**: Prometheus + Grafana, AlertManager
-- **Infrastructure**: Docker, potentially Kubernetes for orchestration
+📋 **Complete Architecture Details**: `@docs/project-system-architecture.md`
+📋 **Technology Stack & Environment Setup**: `@PROJECT_STRUCTURE.md`
 
 ## Component Documentation Map
 
@@ -220,102 +186,16 @@ Given the financial nature of the system:
 
 ## Next Immediate Tasks
 
-When starting the next development session, begin with these tasks in order:
-
-### 🚀 Phase 1.1: Project Structure Setup
-1. **Create directory structure** - Standard Python project layout
-2. **Write requirements.txt** - Install confirmed technology stack
-3. **Setup basic configuration files** - `.env.example`, `config.yaml`
-4. **Initialize TDD workflow** - First failing test for `RiskController`
-
-### 📋 Implementation Checklist
-- [ ] `src/`, `tests/`, `config/` directories created
-- [ ] `requirements.txt` with confirmed packages
-- [ ] First failing test written (`test_risk_controller.py`)
-- [ ] Basic logging system setup
-- [ ] Environment variable management
-
-**Reference for next steps**: `@IMPLEMENTATION_PROGRESS.md` section "다음 즉시 작업"
+**For current phase status and next priorities**: 📋 `@IMPLEMENTATION_PROGRESS.md`
 
 ## Development Commands
 
-### Environment Setup ✅ **COMPLETED (2025-09-14)**
+**For complete environment setup and commands**: 📋 `@PROJECT_STRUCTURE.md`
 
-**🎯 CRITICAL: Use Anaconda Environment**
-- **Environment Name**: `autotrading`
-- **Python Version**: 3.10.18
-- **Location**: `C:\Users\dongd\anaconda3\envs\autotrading`
-
-**⚠️ CRITICAL: Environment Issues Discovered**
-
-**Environment Activation Issues:**
-```bash
-# ❌ FAILED: conda commands not recognized in this environment
-conda activate autotrading                           # Command not found
-C:\Users\dongd\anaconda3\Scripts\conda.exe activate  # CondaError: Run 'conda init'
-```
-
-**⚠️ MANDATORY: Direct Path Execution Required**
-```bash
-# ❌ WRONG: Uses system Python 3.13 (causes compatibility issues)
-python script.py
-pip install package
-
-# ✅ REQUIRED: Must use direct paths to autotrading environment
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" script.py
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package
-
-# ✅ CONFIRMED WORKING: All commands tested and verified
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
-```
-
-### Package Versions (Installed 2025-09-14)
-**Core packages successfully installed:**
-- numpy: 2.2.5 (newer than requirements.txt 1.26.4)
-- pandas: 2.3.2 (newer than requirements.txt 2.2.2)
-- scipy: 1.15.3 (newer than requirements.txt 1.13.1)
-- ccxt: 4.4.82 (newer than requirements.txt 4.3.26)
-- scikit-learn: 1.7.1
-- pydantic: 2.8.2
-- aiohttp: 3.10.1
-- websockets: 12.0
-- All async libraries (asyncio-mqtt, aioredis, aiodns) ✅
-
-### TDD Workflow Commands
-```bash
-# ⚠️ CRITICAL: ALWAYS use direct paths (conda activation fails)
-
-# Run all tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
-
-# Run specific test module
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ -v
-
-# Run specific test file
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_risk_controller.py -v
-
-# Run tests with coverage (when setup)
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest --cov=src tests/
-
-# Run linting (when setup)
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/flake8.exe" src/ tests/
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/mypy.exe" src/
-```
-
-### Package Installation
-```bash
-# ⚠️ CRITICAL: conda install may fail due to activation issues
-# Use direct pip path for all installations
-
-# Install packages directly with pip (VERIFIED WORKING)
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package_name
-
-# For scientific packages (if conda fails, use pip)
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install numpy pandas scipy
-
-# Check installed packages
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pip list
-```
+**Critical Environment Info**:
+- **Environment Name**: `autotrading` (Anaconda, Python 3.10.18)
+- **⚠️ MANDATORY**: Use direct paths (conda activation fails in this environment)
+- **Test Command**: `"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v`
 
 ## Key Implementation Areas by Priority
 
@@ -422,3 +302,44 @@ When debugging complex issues:
 📋 **References**:
 - `@docs/project-system-design/4-risk-management.md` for risk controls
 - `@docs/project-system-architecture.md` (섹션 13) for compliance procedures
+
+## 📋 **Documentation Guidelines** ⭐ **DUPLICATION PREVENTION**
+
+### **🚨 CRITICAL: When Creating New Documents**
+
+**Before creating any new document, check these rules to prevent duplication:**
+
+#### **1. Information Hierarchy Rules**
+- **Level 1 (Main CLAUDE.md)**: Only concepts, principles, and navigation
+- **Level 2 (Specialized docs)**: Complete details for specific domains
+- **Level 3 (Module CLAUDE.md)**: Implementation specifics only
+
+#### **2. Single Source of Truth Assignments**
+- **Environment & Commands**: ➡️ `PROJECT_STRUCTURE.md` ONLY
+- **Progress & Status**: ➡️ `IMPLEMENTATION_PROGRESS.md` ONLY
+- **Tech Stack & Dependencies**: ➡️ `PROJECT_STRUCTURE.md` ONLY
+- **Module Implementation**: ➡️ `src/[module]/CLAUDE.md` ONLY
+
+#### **3. New Module Documentation Process**
+1. **Use Template**: Copy `@MODULE_CLAUDE_TEMPLATE.md`
+2. **Fill Module-Specific Info**: Only implementation details
+3. **Add Navigation**: Update main CLAUDE.md navigation map
+4. **NO Duplication**: Don't repeat environment, tech stack, or general info
+
+#### **4. Documentation Update Rules**
+- **Environment changes** ➡️ Update `PROJECT_STRUCTURE.md` only
+- **Progress changes** ➡️ Update `IMPLEMENTATION_PROGRESS.md` only
+- **Implementation details** ➡️ Update respective module CLAUDE.md only
+
+#### **5. Duplication Check Checklist**
+Before adding information to any document, ask:
+- [ ] Is this information already in another document?
+- [ ] Which document is the Single Source of Truth for this type of info?
+- [ ] Am I adding navigation/reference instead of duplicating content?
+- [ ] Does this follow the 3-level hierarchy rule?
+
+### **🎯 Document Quality Standards**
+- **Always add references** to related documents
+- **Use navigation links** instead of copying information
+- **Keep modules focused** on implementation specifics
+- **Update navigation maps** when adding new documents

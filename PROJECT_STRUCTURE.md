@@ -131,16 +131,22 @@ AutoTradingNew/
 
 ## 🔧 Technology Stack
 
-### **Core Dependencies** (requirements.txt)
+### **Backend & Core**
+- **Language**: Python 3.10.18 (Anaconda environment: `autotrading`)
+- **Concurrency**: asyncio for async operations
+- **Architecture**: Microservices with event-driven patterns, CQRS, hexagonal architecture
+
+### **Core Dependencies** (requirements.txt) ✅ **INSTALLED (2025-09-14)**
 ```
-📊 Data & Computation:     numpy, pandas, scipy, numba
+📊 Data & Computation:     numpy 2.2.5, pandas 2.3.2, scipy 1.15.3, numba
 💰 Quantitative Finance:   QuantLib, arch (GARCH), hmmlearn (HMM), cvxpy
-🤖 Machine Learning:       scikit-learn, lightgbm
+🤖 Machine Learning:       scikit-learn 1.7.1, lightgbm
 🗄️ Databases:             asyncpg (PostgreSQL), redis, sqlalchemy
-⚡ Exchange Connectivity:  ccxt, websockets
-🔄 Communication:          grpcio, aiohttp, httpx
-📝 Configuration:          pydantic, python-dotenv, pyyaml
+⚡ Exchange Connectivity:  ccxt 4.4.82, websockets 12.0
+🔄 Communication:          grpcio, aiohttp 3.10.1, httpx
+📝 Configuration:          pydantic 2.8.2, python-dotenv, pyyaml
 📡 Monitoring:             structlog, prometheus-client
+🔒 Security:               cryptography
 ```
 
 ### **Development Dependencies** (requirements-dev.txt)
@@ -151,6 +157,12 @@ AutoTradingNew/
 🔍 Profiling:             py-spy, memory-profiler, line-profiler
 🏭 Test Data:             factory-boy, freezegun
 ```
+
+### **Infrastructure & Databases**
+- **Databases**: PostgreSQL (transactional), TimescaleDB (time series), Redis (caching/state)
+- **Communication**: gRPC (inter-service), WebSocket (market data)
+- **Monitoring**: Prometheus + Grafana, AlertManager
+- **Deployment**: Docker, potentially Kubernetes for orchestration
 
 ## 📋 Implementation Priorities
 
@@ -196,53 +208,89 @@ AutoTradingNew/
 - Audit logging for all trading activities
 - Backup and disaster recovery procedures
 
-## 🚀 Quick Start Commands
+## 🚀 Environment Setup & Commands ⭐ **SINGLE SOURCE OF TRUTH**
 
-### **Environment Setup**
+### **Environment Setup** ✅ **COMPLETED (2025-09-14)**
+
+**🎯 CRITICAL: Use Anaconda Environment**
+- **Environment Name**: `autotrading`
+- **Python Version**: 3.10.18
+- **Location**: `C:\Users\dongd\anaconda3\envs\autotrading`
+
+**⚠️ CRITICAL: Environment Issues Discovered**
+
+**Environment Activation Issues:**
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\\Scripts\\activate    # Windows
+# ❌ FAILED: conda commands not recognized in this environment
+conda activate autotrading                           # Command not found
+C:\Users\dongd\anaconda3\Scripts\conda.exe activate  # CondaError: Run 'conda init'
+```
 
-# Install dependencies
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+**⚠️ MANDATORY: Direct Path Execution Required**
+```bash
+# ❌ WRONG: Uses system Python 3.13 (causes compatibility issues)
+python script.py
+pip install package
+
+# ✅ REQUIRED: Must use direct paths to autotrading environment
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" script.py
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package
+
+# ✅ CONFIRMED WORKING: All commands tested and verified
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
+```
+
+### **Package Installation Commands**
+```bash
+# ⚠️ CRITICAL: conda install may fail due to activation issues
+# Use direct pip path for all installations
+
+# Install packages directly with pip (VERIFIED WORKING)
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package_name
+
+# For scientific packages (if conda fails, use pip)
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install numpy pandas scipy
+
+# Check installed packages
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pip list
 
 # Setup environment variables
 cp .env.example .env
 # Edit .env with your actual values
 ```
 
-### **Development Workflow**
+### **TDD Workflow Commands** ⚠️ **CRITICAL: ALWAYS use direct paths**
 ```bash
-# Run tests (TDD workflow)
-pytest -v
+# Run all tests
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
 
-# Run specific test category
-pytest tests/unit/ -v              # Unit tests only
-pytest tests/integration/ -v       # Integration tests only
+# Run specific test modules
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ -v
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/ -v
 
-# Code quality checks
-black src/ tests/                  # Code formatting
-isort src/ tests/                  # Import sorting
-flake8 src/ tests/                # Linting
-mypy src/                         # Type checking
+# Run specific test file
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_risk_controller.py -v
 
-# Run with coverage
-pytest --cov=src --cov-report=html
+# Run with coverage (when setup)
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest --cov=src tests/
+
+# Code quality checks (when setup)
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/flake8.exe" src/ tests/
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/mypy.exe" src/
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/black.exe" src/ tests/
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/isort.exe" src/ tests/
 ```
 
-### **System Execution**
+### **System Execution** (Future)
 ```bash
 # Main trading system
-python scripts/run_trading.py
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/run_trading.py
 
 # Backtesting
-python scripts/backtest.py
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/backtest.py
 
 # Paper trading
-python scripts/paper_trading.py
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/paper_trading.py
 ```
 
 ## 📊 Next Development Steps
@@ -262,15 +310,36 @@ python scripts/paper_trading.py
 ### **Development Methodology**
 - **Follow TDD**: Red → Green → Refactor cycle
 - **Commit Discipline**: Separate structural vs. behavioral changes
-- **Documentation**: Update this file as structure evolves
+- **Documentation**: Follow Single Source of Truth principle (see `@CLAUDE.md` documentation guidelines)
 - **Risk First**: Implement risk controls before trading logic
 
-## 🔗 Key References
+### **📋 Document Management Rules** ⭐ **CRITICAL**
 
-- **Development Guide**: `@docs/augmented-coding.md` (TDD methodology)
-- **System Architecture**: `@docs/project-system-architecture.md`
-- **Implementation Plan**: `@docs/AGREED_IMPLEMENTATION_PLAN.md`
-- **Progress Tracking**: `@IMPLEMENTATION_PROGRESS.md`
+**This file (`PROJECT_STRUCTURE.md`) is the SINGLE SOURCE OF TRUTH for:**
+- ✅ **Complete project structure**
+- ✅ **Technology stack and dependencies**
+- ✅ **Environment setup and all commands**
+- ✅ **Architecture principles**
+
+**⚠️ NEVER duplicate this information in other documents**
+- Other documents should REFERENCE this file
+- Use navigation links: `📋 @PROJECT_STRUCTURE.md`
+- Keep module-specific docs focused on implementation only
+
+## 🔗 **Related Documentation**
+
+### **📋 Main Claude Code References**
+- **🎯 Development Guide**: `@CLAUDE.md` - Core development guidance and document navigation
+- **📊 Progress Status**: `@IMPLEMENTATION_PROGRESS.md` - Current phase status and next steps
+- **🗺️ Implementation Plan**: `@docs/AGREED_IMPLEMENTATION_PLAN.md` - Complete roadmap
+
+### **📂 Module-Specific Details**
+- **⚠️ Risk Management**: `@src/risk_management/CLAUDE.md` - Implementation details and APIs
+
+### **📖 Technical Documentation**
+- **🧪 TDD Methodology**: `@docs/augmented-coding.md` - Development discipline
+- **🏛️ System Architecture**: `@docs/project-system-architecture.md` - Complete architecture
+- **🔧 Engineering Guide**: `@docs/software-engineering-guide.md` - Best practices
 
 ---
 

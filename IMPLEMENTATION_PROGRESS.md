@@ -311,16 +311,38 @@ recovery_stats = risk_controller.get_recovery_statistics()
 7. ~~**Kelly Criterion 계산 엔진 구현**~~ ✅ **NEW 완료**
 8. ~~**VaR 한도 체크 시스템 구현**~~ ✅ **NEW 완료**
 
-### 📚 참고 문서
-- `@docs/project-system-design/4-risk-management.md` - 리스크 관리 상세 설계
-- `@docs/augmented-coding.md` - TDD 방법론
-- `@docs/project-system-design/14-implementation-guide.md` - 구현 가이드
+## 🔗 **관련 문서**
+
+### **📋 메인 개발 참고**
+- **🎯 개발 가이드**: `@CLAUDE.md` - 핵심 개발 지침 및 문서 내비게이션
+- **🏗️ 프로젝트 구조**: `@PROJECT_STRUCTURE.md` - 완전한 구조, 기술 스택, 환경 설정
+- **🗺️ 구현 로드맵**: `@docs/AGREED_IMPLEMENTATION_PLAN.md` - 5단계 개발 계획
+
+### **📂 모듈별 구현 상세**
+- **⚠️ 리스크 관리**: `@src/risk_management/CLAUDE.md` - 완성된 구현 상세사항
+
+### **📖 기술 문서**
+- **💰 리스크 관리 설계**: `@docs/project-system-design/4-risk-management.md` - 상세 설계
+- **🧪 TDD 방법론**: `@docs/augmented-coding.md` - 개발 방법론
+- **🔧 구현 가이드**: `@docs/project-system-design/14-implementation-guide.md` - 구현 가이드
 
 ### 🔍 체크포인트
 - 모든 작업은 TDD 사이클로 진행
 - 각 단계마다 테스트 먼저 작성
 - 구조적 변경과 행동적 변경 분리
 - 작은 단위로 자주 커밋
+
+### **📋 문서 관리 규칙** ⭐ **중요**
+
+**이 파일(`IMPLEMENTATION_PROGRESS.md`)은 다음 정보의 단일 정보원입니다:**
+- ✅ **현재 진행 상황 및 완료 작업 목록**
+- ✅ **Phase별 상세 진행률**
+- ✅ **다음 우선순위 작업**
+- ✅ **수익 창출 분석**
+
+**⚠️ 다른 문서에서 이 정보를 중복하지 말 것**
+- 다른 문서에서는 이 파일을 참조: `📋 @IMPLEMENTATION_PROGRESS.md`
+- 모듈별 문서는 해당 모듈의 구현 상세만 기록
 
 ## 💰 수익 창출 가능 시점 분석 **NEW**
 

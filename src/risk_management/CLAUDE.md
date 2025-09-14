@@ -350,20 +350,12 @@ if stop_reason:
 - **Constraint Validation Test** (1 test): All constraints (Kelly, ATR, VaR, correlation) working together
 
 ### Test Execution Commands:
+**For complete environment commands**: 📋 `@PROJECT_STRUCTURE.md`
+
 ```bash
-# Run all risk management tests
+# Risk Management specific tests
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ -v
-
-# Run specific test modules
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_risk_controller.py -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_position_sizing.py -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/test_position_management.py -v
-
-# Run integration tests
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/test_risk_management_integration.py -v
-
-# Run all tests (unit + integration)
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ tests/integration/test_risk_management_integration.py -v
 ```
 
 ## 🎉 **PHASE 1.2 COMPLETED** - Full Risk Management Module 🚀
@@ -499,20 +491,22 @@ position = position_manager.open_position(
 - ✅ **Position Lifecycle**: Complete open-to-close position management
 - ✅ **Exchange Integration**: Lot sizes, margin requirements, liquidation calculations
 
-## 📚 Related Documentation
+## 📚 **Related Documentation**
 
-- **Design Reference**: `@docs/project-system-design/4-risk-management.md`
-- **Financial Models**: `@docs/project-system-design/2-financial-engineering.md`
-- **TDD Methodology**: `@docs/augmented-coding.md`
-- **Main Progress**: `@IMPLEMENTATION_PROGRESS.md`
+### **📋 Main Claude Code References**
+- **🎯 Development Guide**: `@CLAUDE.md` - Core development guidance and document navigation
+- **📊 Progress Status**: `@IMPLEMENTATION_PROGRESS.md` - Overall project progress and next steps
+- **🏗️ Project Structure**: `@PROJECT_STRUCTURE.md` - Complete environment setup and commands
+
+### **📖 Technical Specifications**
+- **💰 Risk Management Design**: `@docs/project-system-design/4-risk-management.md` - Detailed design specifications
+- **🔢 Financial Models**: `@docs/project-system-design/2-financial-engineering.md` - Kelly Criterion, VaR theory
+- **🧪 TDD Methodology**: `@docs/augmented-coding.md` - Development discipline and practices
 
 ## ⚠️ Critical Dependencies
 
-- **numpy**: 2.2.5 (for array operations)
-- **pandas**: 2.3.2 (for time series handling)
-- **scipy**: 1.15.3 (for statistical functions)
-- **pytest**: For testing framework
-- **Python Environment**: `autotrading` (Anaconda, Python 3.10.18)
+**For complete dependency information**: 📋 `@PROJECT_STRUCTURE.md`
+**Key Requirements**: numpy, pandas, scipy, pytest
 
 ## 🔧 Development Patterns for This Module
 
