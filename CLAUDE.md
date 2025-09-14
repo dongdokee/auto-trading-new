@@ -9,9 +9,8 @@ This is a Korean cryptocurrency futures automated trading system (코인 선물 
 ## 📚 **Document Navigation Map** ⭐ **SINGLE SOURCE OF TRUTH**
 
 ### **📋 Core Documentation**
-- **📊 Progress & Status**: `@IMPLEMENTATION_PROGRESS.md` - Current phase, completed work, next priorities
+- **📊 Project Roadmap & Status**: `@PROJECT_ROADMAP_AND_STATUS.md` - Complete project overview, progress, roadmap, next priorities
 - **🏗️ Structure & Environment**: `@PROJECT_STRUCTURE.md` - Complete structure, tech stack, commands
-- **🗺️ Implementation Roadmap**: `@docs/AGREED_IMPLEMENTATION_PLAN.md` - 5-phase development plan
 
 ### **📂 Module-Specific Implementation Details**
 - **⚠️ Risk Management**: `@src/risk_management/CLAUDE.md` - ✅ **PHASE 1 COMPLETED** (RiskController, PositionSizer, PositionManager)
@@ -76,9 +75,9 @@ This is a Korean cryptocurrency futures automated trading system (코인 선물 
 - **Real-time performance**: <100ms complete trading workflow processing
 
 ### 🎯 **Revenue Generation Timeline**
-- **Phase 4.2 completion (85%)**: First revenue generation possible (2-3 months from now)
-- **Phase 5.1 completion (90%)**: Stable revenue with paper trading validation (3-4 months)
-- **Phase 5.2 completion (100%)**: Optimized revenue with full system validation (4-5 months)
+- **Phase 4.2 completion (85%)**: First revenue generation possible (2 weeks from now)
+- **Phase 5.1 completion (90%)**: Stable revenue with paper trading validation (4-5 weeks)
+- **Phase 5.2 completion (100%)**: Optimized revenue with full system validation (8-10 weeks)
 
 ## 📁 **Project Structure Adherence** ⭐
 
@@ -349,7 +348,7 @@ When debugging complex issues:
 
 #### **4. Documentation Update Rules**
 - **Environment changes** ➡️ Update `PROJECT_STRUCTURE.md` only
-- **Progress changes** ➡️ Update `IMPLEMENTATION_PROGRESS.md` only
+- **Progress changes** ➡️ Update `PROJECT_ROADMAP_AND_STATUS.md` only
 - **Implementation details** ➡️ Update respective module CLAUDE.md only
 
 #### **5. Duplication Check Checklist**
