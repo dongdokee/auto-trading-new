@@ -139,6 +139,12 @@ The system implements sophisticated quantitative finance concepts:
 - Use dependency injection for testability
 - Separate pure business logic from infrastructure concerns
 
+### Code Generation Standards
+- **CRITICAL**: Never use emojis or Unicode characters in generated code, including string literals and outputs
+- Use only ASCII characters for all code elements: variables, functions, comments, and string content
+- Ensure all code remains compatible with standard text editors and version control systems
+- Documentation files (.md) may use Unicode characters as needed
+
 📋 **Reference**: `@docs/software-engineering-guide.md` (섹션 1-4)
 
 ### TDD Workflow for Financial Components
