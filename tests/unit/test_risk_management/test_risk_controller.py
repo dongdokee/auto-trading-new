@@ -175,3 +175,177 @@ class TestRiskController:
 
         # Then
         assert kelly_fraction == 0.0
+
+    def test_should_detect_leverage_limit_violation(self):
+        """레버리지 한도 위반을 감지해야 함"""
+        # Given
+        initial_capital = 10000.0  # 10,000 USDT
+        max_leverage = 5.0  # 최대 레버리지 5x
+
+        risk_controller = RiskController(
+            initial_capital,
+            max_leverage=max_leverage
+        )
+
+        # Portfolio state with excessive leverage (8x > 5x limit)
+        portfolio_state = {
+            'equity': 10000.0,
+            'total_leverage': 8.0,  # 한도 초과
+            'positions': [
+                {
+                    'symbol': 'BTCUSDT',
+                    'side': 'LONG',
+                    'size': 0.4,  # 0.4 BTC
+                    'notional': 40000.0,  # 40,000 USDT notional
+                    'leverage': 4.0
+                },
+                {
+                    'symbol': 'ETHUSDT',
+                    'side': 'LONG',
+                    'size': 20.0,  # 20 ETH
+                    'notional': 40000.0,  # 40,000 USDT notional
+                    'leverage': 4.0
+                }
+            ]
+        }
+
+        # When
+        violations = risk_controller.check_leverage_limit(portfolio_state)
+
+        # Then
+        assert len(violations) == 1
+        assert violations[0][0] == 'LEVERAGE'
+        assert violations[0][1] == 8.0  # 위반된 레버리지 값
+
+    def test_should_pass_when_leverage_within_limit(self):
+        """레버리지가 한도 내에 있을 때는 위반이 없어야 함"""
+        # Given
+        initial_capital = 10000.0
+        max_leverage = 10.0  # 기본 최대 레버리지 10x
+
+        risk_controller = RiskController(initial_capital, max_leverage=max_leverage)
+
+        # Portfolio state within leverage limit (3x < 10x)
+        portfolio_state = {
+            'equity': 10000.0,
+            'total_leverage': 3.0,  # 한도 내
+            'positions': [
+                {
+                    'symbol': 'BTCUSDT',
+                    'side': 'LONG',
+                    'size': 0.3,  # 0.3 BTC
+                    'notional': 30000.0,  # 30,000 USDT notional
+                    'leverage': 3.0
+                }
+            ]
+        }
+
+        # When
+        violations = risk_controller.check_leverage_limit(portfolio_state)
+
+        # Then
+        assert len(violations) == 0  # 위반 없음
+
+    def test_should_calculate_total_leverage_correctly(self):
+        """포트폴리오의 총 레버리지를 정확히 계산해야 함"""
+        # Given
+        risk_controller = RiskController(10000.0)
+
+        # Multiple positions with different leverages
+        portfolio_state = {
+            'equity': 10000.0,  # 10,000 USDT equity
+            'positions': [
+                {
+                    'symbol': 'BTCUSDT',
+                    'notional': 20000.0,  # 20,000 USDT notional
+                    'leverage': 2.0
+                },
+                {
+                    'symbol': 'ETHUSDT',
+                    'notional': 15000.0,  # 15,000 USDT notional
+                    'leverage': 1.5
+                },
+                {
+                    'symbol': 'ADAUSDT',
+                    'notional': 5000.0,  # 5,000 USDT notional
+                    'leverage': 1.0
+                }
+            ]
+        }
+
+        # When
+        # 총 notional = 20000 + 15000 + 5000 = 40000
+        # 총 레버리지 = 40000 / 10000 = 4.0x
+        total_leverage = risk_controller._calculate_total_leverage(portfolio_state)
+
+        # Then
+        assert total_leverage == 4.0
+
+    def test_should_handle_empty_portfolio_leverage(self):
+        """빈 포트폴리오의 레버리지는 0이어야 함"""
+        # Given
+        risk_controller = RiskController(10000.0)
+
+        # Empty portfolio
+        portfolio_state = {
+            'equity': 10000.0,
+            'positions': []  # 포지션 없음
+        }
+
+        # When
+        violations = risk_controller.check_leverage_limit(portfolio_state)
+        total_leverage = risk_controller._calculate_total_leverage(portfolio_state)
+
+        # Then
+        assert len(violations) == 0  # 위반 없음
+        assert total_leverage == 0.0  # 레버리지 0
+
+    def test_should_calculate_safe_leverage_for_liquidation_distance(self):
+        """청산 거리 기반 안전 레버리지 계산"""
+        # Given
+        risk_controller = RiskController(10000.0, max_leverage=10.0)
+
+        # Portfolio with position close to liquidation
+        portfolio_state = {
+            'equity': 10000.0,
+            'positions': [
+                {
+                    'symbol': 'BTCUSDT',
+                    'side': 'LONG',
+                    'current_price': 100000.0,
+                    'liquidation_price': 90000.0,  # 10% away from liquidation
+                    'notional': 50000.0,
+                    'daily_volatility': 0.05  # 5% daily volatility
+                }
+            ]
+        }
+
+        # When
+        safe_leverage = risk_controller.calculate_safe_leverage_limit(portfolio_state)
+
+        # Then
+        # With 10% distance and 5% volatility, safe leverage should be conservative
+        assert safe_leverage < 10.0  # Should be less than max leverage
+        assert safe_leverage > 0.0   # Should be positive
+        assert isinstance(safe_leverage, float)
+
+    def test_should_adjust_leverage_for_high_volatility(self):
+        """높은 변동성 시장에서 레버리지 조정"""
+        # Given
+        risk_controller = RiskController(10000.0, max_leverage=10.0)
+
+        # High volatility market state
+        market_state = {
+            'daily_volatility': 0.08,  # 8% daily volatility (high)
+            'regime': 'VOLATILE'
+        }
+
+        # When
+        adjusted_leverage = risk_controller.calculate_volatility_adjusted_leverage(
+            base_leverage=5.0,
+            market_state=market_state
+        )
+
+        # Then
+        assert adjusted_leverage < 5.0  # Should reduce leverage in high volatility
+        assert adjusted_leverage > 0.0

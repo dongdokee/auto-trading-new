@@ -6,16 +6,16 @@ This file provides specific guidance for Claude Code when working on the risk ma
 
 **Location**: `src/risk_management/` and `src/core/risk_management.py`
 **Purpose**: Core risk management functionality including Kelly Criterion optimization, VaR monitoring, and position sizing
-**Status**: ✅ **RiskController class fully implemented with TDD**
-**Last Updated**: 2025-09-14
+**Status**: ✅ **RiskController class fully implemented with TDD + Leverage Limit Checking**
+**Last Updated**: 2025-09-14 (Leverage system completed)
 
 ## ⭐ CRITICAL IMPLEMENTATION CONTEXT ⭐
 
 ### 🚀 Successfully Completed: RiskController Class
 
 **File**: `src/risk_management/risk_management.py`
-**Tests**: `tests/unit/test_risk_management/test_risk_controller.py` (9 test cases, all passing)
-**Implementation Date**: 2025-09-14
+**Tests**: `tests/unit/test_risk_management/test_risk_controller.py` (15 test cases, all passing)
+**Implementation Date**: 2025-09-14 (Updated: Leverage system added)
 
 #### **Key Architecture Decisions:**
 
@@ -50,6 +50,13 @@ RiskController(
    - Supports both return-based and USDT-based limits
    - Integrated with portfolio state dictionary structure
 
+4. **🚀 NEW: Leverage Limit System** - Advanced leverage management:
+   - **Basic Leverage Checking**: `check_leverage_limit()` - detects portfolio leverage violations
+   - **Total Leverage Calculation**: `_calculate_total_leverage()` - computes portfolio-wide leverage
+   - **Safe Leverage Calculation**: `calculate_safe_leverage_limit()` - liquidation distance-based limits
+   - **Volatility Adjustment**: `calculate_volatility_adjusted_leverage()` - market regime-aware scaling
+   - **Multi-layered Safety**: 3-sigma safety margins, regime-based adjustments, minimum 1x leverage
+
 #### **Critical Technical Patterns:**
 
 - **TDD Methodology**: Red → Green → Refactor cycles successfully applied
@@ -72,6 +79,21 @@ kelly_fraction = risk_controller.calculate_optimal_position_fraction(
     fractional=0.25               # Optional: fractional Kelly multiplier
 )
 # Returns: float - optimal position fraction (+ for long, - for short, 0 for no position)
+
+# 3. 🚀 NEW: Leverage Limit Checking
+leverage_violations = risk_controller.check_leverage_limit(portfolio_state)
+# Returns: List[Tuple[str, float]] - leverage violations
+
+# 4. 🚀 NEW: Safe Leverage Calculation
+safe_leverage = risk_controller.calculate_safe_leverage_limit(portfolio_state)
+# Returns: float - max safe leverage based on liquidation distances
+
+# 5. 🚀 NEW: Volatility-Adjusted Leverage
+adjusted_leverage = risk_controller.calculate_volatility_adjusted_leverage(
+    base_leverage=5.0,
+    market_state={'daily_volatility': 0.08, 'regime': 'VOLATILE'}
+)
+# Returns: float - leverage adjusted for market conditions
 ```
 
 #### **Integration Points:**
@@ -84,23 +106,31 @@ kelly_fraction = risk_controller.calculate_optimal_position_fraction(
 ## 🧪 Test Suite
 
 **Location**: `tests/test_risk_management.py`
-**Status**: ✅ All tests passing (9/9)
+**Status**: ✅ All tests passing (15/15) 🚀 **UPDATED**
 
 ### Test Coverage:
-1. **Initialization Tests**:
+1. **Initialization Tests** (3 tests):
    - `test_should_initialize_with_correct_usdt_capital`
    - `test_should_set_default_risk_limits_based_on_capital`
    - `test_should_allow_custom_risk_parameters`
 
-2. **VaR Limit Tests**:
+2. **VaR Limit Tests** (2 tests):
    - `test_should_detect_var_limit_violation`
    - `test_should_pass_when_var_within_limit`
 
-3. **Kelly Criterion Tests**:
+3. **Kelly Criterion Tests** (4 tests):
    - `test_should_calculate_kelly_fraction_long_only_default`
    - `test_should_return_zero_for_negative_returns_long_only`
    - `test_should_allow_short_positions_when_enabled`
    - `test_should_return_zero_for_insufficient_data`
+
+4. **🚀 NEW: Leverage Management Tests** (6 tests):
+   - `test_should_detect_leverage_limit_violation`
+   - `test_should_pass_when_leverage_within_limit`
+   - `test_should_calculate_total_leverage_correctly`
+   - `test_should_handle_empty_portfolio_leverage`
+   - `test_should_calculate_safe_leverage_for_liquidation_distance`
+   - `test_should_adjust_leverage_for_high_volatility`
 
 ### Test Execution Commands:
 ```bash
@@ -115,13 +145,19 @@ kelly_fraction = risk_controller.calculate_optimal_position_fraction(
 
 ### Still To Implement (Phase 1.2 completion):
 
-1. **Leverage Limit Checking**:
+1. ~~**Leverage Limit Checking**~~ ✅ **COMPLETED (2025-09-14)**:
 ```python
 def check_leverage_limit(self, portfolio_state: Dict) -> List[Tuple[str, float]]:
-    """Check if total leverage exceeds limits"""
+    """✅ IMPLEMENTED: Check if total leverage exceeds limits"""
+
+def calculate_safe_leverage_limit(self, portfolio_state: Dict) -> float:
+    """✅ IMPLEMENTED: Calculate safe leverage based on liquidation distance"""
+
+def calculate_volatility_adjusted_leverage(self, base_leverage: float, market_state: Dict) -> float:
+    """✅ IMPLEMENTED: Adjust leverage for market volatility and regime"""
 ```
 
-2. **Drawdown Monitoring**:
+2. **Drawdown Monitoring** - **NEXT PRIORITY**:
 ```python
 def update_drawdown(self, current_equity: float) -> float:
     """Update and return current drawdown percentage"""

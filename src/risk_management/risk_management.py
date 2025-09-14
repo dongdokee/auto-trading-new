@@ -123,3 +123,115 @@ class RiskController:
             }
             cap = regime_caps.get(regime, 0.08)
             return float(np.clip(max(0.0, kelly_fraction), 0.0, cap))
+
+    def check_leverage_limit(self, portfolio_state: Dict) -> List[Tuple[str, float]]:
+        """레버리지 한도 체크"""
+        violations = []
+
+        # 총 레버리지 계산
+        total_leverage = self._calculate_total_leverage(portfolio_state)
+        leverage_limit = self.risk_limits['max_leverage']
+
+        if total_leverage > leverage_limit:
+            violations.append(('LEVERAGE', total_leverage))
+
+        return violations
+
+    def _calculate_total_leverage(self, portfolio_state: Dict) -> float:
+        """포트폴리오의 총 레버리지 계산"""
+        equity = portfolio_state.get('equity', self.initial_capital)
+        positions = portfolio_state.get('positions', [])
+
+        # 포지션이 없으면 레버리지 0
+        if not positions:
+            return 0.0
+
+        # 총 notional 값 계산
+        total_notional = sum(
+            position.get('notional', 0.0) for position in positions
+        )
+
+        # 레버리지 = 총 notional / equity
+        if equity > 0:
+            return total_notional / equity
+        else:
+            return 0.0
+
+    def calculate_safe_leverage_limit(self, portfolio_state: Dict) -> float:
+        """청산 거리 기반 안전 레버리지 한도 계산"""
+        positions = portfolio_state.get('positions', [])
+
+        if not positions:
+            return self.risk_limits['max_leverage']
+
+        min_safe_leverage = self.risk_limits['max_leverage']
+
+        for position in positions:
+            current_price = position.get('current_price', 0)
+            liquidation_price = position.get('liquidation_price', 0)
+            daily_vol = position.get('daily_volatility', 0.05)  # 기본 5%
+            side = position.get('side', 'LONG')
+
+            if current_price <= 0 or liquidation_price <= 0:
+                continue
+
+            # 청산 거리 계산 (로그 기준)
+            if side == 'LONG':
+                log_distance = np.log(current_price / liquidation_price)
+            else:  # SHORT
+                log_distance = np.log(liquidation_price / current_price)
+
+            # 안전 계수 (3-sigma 기준)
+            safety_factor = 3.0
+            required_distance = safety_factor * daily_vol
+
+            # 안전 레버리지 계산
+            if log_distance > required_distance:
+                # 충분한 거리가 있으면 기본 한도 사용
+                position_safe_leverage = self.risk_limits['max_leverage']
+            else:
+                # 거리가 부족하면 비례적으로 감소
+                distance_ratio = max(0.1, log_distance / required_distance)
+                position_safe_leverage = self.risk_limits['max_leverage'] * distance_ratio
+
+            min_safe_leverage = min(min_safe_leverage, position_safe_leverage)
+
+        return float(max(1.0, min_safe_leverage))  # 최소 1배 레버리지
+
+    def calculate_volatility_adjusted_leverage(self, base_leverage: float,
+                                             market_state: Dict) -> float:
+        """변동성 기반 레버리지 조정"""
+        daily_vol = market_state.get('daily_volatility', 0.05)
+        regime = market_state.get('regime', 'NEUTRAL')
+
+        # 기준 변동성 (5%)
+        base_volatility = 0.05
+
+        # 변동성 조정 계수
+        vol_ratio = daily_vol / base_volatility
+
+        if vol_ratio <= 1.0:
+            # 낮은 변동성 - 레버리지 약간 증가 허용
+            vol_adjustment = 1.0 + (1.0 - vol_ratio) * 0.2  # 최대 20% 증가
+        else:
+            # 높은 변동성 - 레버리지 감소
+            vol_adjustment = 1.0 / (1.0 + (vol_ratio - 1.0) * 0.5)  # 변동성 2배면 레버리지 2/3
+
+        # 레짐별 추가 조정
+        regime_adjustments = {
+            'BULL': 1.1,      # 강세장에서 약간 증가
+            'BEAR': 0.8,      # 약세장에서 감소
+            'SIDEWAYS': 0.9,  # 횡보에서 약간 감소
+            'VOLATILE': 0.7,  # 고변동성에서 크게 감소
+            'NEUTRAL': 1.0    # 기본
+        }
+
+        regime_adjustment = regime_adjustments.get(regime, 1.0)
+
+        # 최종 조정된 레버리지
+        adjusted_leverage = base_leverage * vol_adjustment * regime_adjustment
+
+        # 최대 한도 적용
+        max_allowed = self.risk_limits['max_leverage']
+
+        return float(max(0.1, min(adjusted_leverage, max_allowed)))
