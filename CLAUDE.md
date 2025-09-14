@@ -10,7 +10,8 @@ This is a Korean cryptocurrency futures automated trading system (코인 선물 
 
 ### **📋 Core Documentation**
 - **📊 Project Roadmap & Status**: `@PROJECT_ROADMAP_AND_STATUS.md` - Complete project overview, progress, roadmap, next priorities
-- **🏗️ Structure & Environment**: `@PROJECT_STRUCTURE.md` - Complete structure, tech stack, commands
+- **🏗️ Structure & Environment**: `@PROJECT_STRUCTURE.md` - Complete structure, environment setup, commands
+- **🔧 Technology Stack**: `@TECHNOLOGY_STACK.md` - All technical specifications, architecture patterns, dependencies
 
 ### **📂 Module-Specific Implementation Details**
 - **⚠️ Risk Management**: `@src/risk_management/CLAUDE.md` - ✅ **PHASE 1 COMPLETED** (RiskController, PositionSizer, PositionManager)

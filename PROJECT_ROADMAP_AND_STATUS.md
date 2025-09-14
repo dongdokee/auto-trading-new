@@ -27,15 +27,7 @@
 ## 🗺️ 5단계 개발 로드맵
 
 ### 기술 스택 및 아키텍처
-- **언어**: Python 3.10.18 (Anaconda 환경)
-- **아키텍처**: Clean Architecture, Hexagonal Architecture
-- **데이터베이스**: PostgreSQL, TimescaleDB
-- **비동기 처리**: asyncio, aiohttp
-- **데이터 분석**: pandas 2.3.2, numpy 2.2.5, scipy 1.15.3
-- **금융 모델링**: scikit-learn 1.7.1, statsmodels
-- **API 연동**: ccxt 4.4.82, websockets 12.0
-- **테스팅**: pytest, pytest-asyncio
-- **로깅**: structlog 24.2.0
+📋 **완전한 기술 사양**: `@TECHNOLOGY_STACK.md` - 모든 기술 스택, 아키텍처 패턴, 의존성 정보
 
 ### Phase 1: 프로젝트 기초 구축 ✅ **완료** (1주)
 **목표**: 견고한 프로젝트 기반 구조 설정 및 핵심 리스크 관리 모듈 구현
@@ -141,25 +133,13 @@
 - **57개 테스트 100% 통과**: 모든 엣지 케이스 포함
 
 **주요 기능**:
-```python
-# 유연한 초기화 (12개 파라미터 설정 가능)
-risk_controller = RiskController(
-    initial_capital_usdt=10000.0,
-    var_daily_pct=0.02,           # VaR 한도
-    max_drawdown_pct=0.12,        # 최대 드로다운 12%
-    max_consecutive_loss_days=7,  # 연속 손실일 한도
-    allow_short=True              # 숏 포지션 허용 옵션
-)
+- 유연한 초기화 (12개 설정 가능 파라미터)
+- Kelly Criterion 기반 최적 포지션 계산
+- VaR 한도 및 드로다운 모니터링 (MILD/MODERATE/SEVERE 단계별)
+- 다중 제약 조건 최적화 (Kelly/ATR/VaR/청산안전)
+- 실시간 PnL 추적 및 포지션 생명주기 관리
 
-# Kelly Criterion 계산
-kelly_fraction = risk_controller.calculate_optimal_position_fraction(
-    returns, regime='BULL', fractional=0.25
-)
-
-# 드로다운 모니터링
-current_drawdown = risk_controller.update_drawdown(current_equity)
-severity = risk_controller.get_drawdown_severity_level()  # 'MILD'/'MODERATE'/'SEVERE'
-```
+📋 **구현 상세**: `@src/risk_management/CLAUDE.md`
 
 #### 2. 백테스팅 프레임워크 ✅ **Phase 2.1 완료**
 **핵심 성과**:
@@ -199,18 +179,15 @@ severity = risk_controller.get_drawdown_severity_level()  # 'MILD'/'MODERATE'/'S
 - **금융 수학 라이브러리**: 24개 함수 (Sharpe, Sortino, VaR 등)
 - **시간 유틸리티**: 47개 함수 (시장시간, 거래달력 등)
 
-### 📊 품질 및 성능 지표
-- **총 테스트 수**: 222개 (100% 통과)
-- **TDD 방법론**: Red-Green-Refactor 사이클 완벽 준수
+### 📊 시스템 품질 지표
+- **테스트 커버리지**: 222개 테스트 100% 통과 (TDD 방법론 완벽 준수)
 - **실시간 성능**: <100ms 완전 거래 워크플로 처리
-- **코드 커버리지**: >90% (모든 핵심 모듈)
-- **프로덕션 준비도**: 설정 가능한 아키텍처 + 고성능 시스템
+- **프로덕션 준비도**: 고성능 설정 가능 아키텍처
 
-### 🎯 기술적 성취
-- **완전한 전략→포트폴리오→리스크→포지션 사이징 파이프라인**
-- **고급 금융공학 모델**: Kelly + HMM/GARCH + Markowitz + Brinson-Fachler
-- **프로덕션급 데이터베이스 시스템**: 마이그레이션 + 성능 최적화
-- **실시간 워크플로 최적화**: 포트폴리오 최적화 <100ms 완전 처리
+### 🎯 핵심 시스템 성취
+- **완전한 자동화 파이프라인**: 전략 신호 → 포트폴리오 최적화 → 리스크 관리 → 포지션 사이징
+- **고급 금융공학 모델**: Kelly Criterion + HMM/GARCH 레짐 감지 + Markowitz 최적화
+- **프로덕션급 인프라**: 데이터베이스 마이그레이션 + 실시간 성능 최적화
 
 ---
 
@@ -278,25 +255,12 @@ severity = risk_controller.get_drawdown_severity_level()  # 'MILD'/'MODERATE'/'S
 ### 🎯 즉시 시작할 수 있는 첫 번째 작업
 
 **1단계**: 주문 라우터 TDD 구현 시작
-```bash
-# 테스트 파일 생성
-mkdir -p tests/unit/test_execution
-touch tests/unit/test_execution/test_smart_order_router.py
+- 테스트 및 소스 파일 디렉터리 구조 생성
+- 첫 번째 실패 테스트 작성 (대량 주문 분할 기능)
+- Red-Green-Refactor 사이클 시작
 
-# 소스 파일 생성
-mkdir -p src/execution
-touch src/execution/__init__.py
-touch src/execution/smart_order_router.py
-```
-
-**첫 번째 실패 테스트 작성**:
-```python
-def test_should_split_large_order_into_smaller_chunks():
-    # Given: 큰 주문과 최대 주문 크기 제한
-    # When: 주문 분할 실행
-    # Then: 적절한 크기로 분할되어야 함
-    assert False  # 아직 구현되지 않음
-```
+📋 **상세 구현 절차**: `@docs/augmented-coding.md` - TDD 방법론
+📋 **환경 설정 명령어**: `@ENVIRONMENT.md`
 
 ---
 
@@ -376,55 +340,25 @@ def test_should_split_large_order_into_smaller_chunks():
 
 ### 📋 핵심 문서 내비게이션
 
-#### 메인 개발 참고
-- **🎯 개발 가이드**: `@CLAUDE.md` - 핵심 개발 지침 및 문서 내비게이션
-- **🏗️ 프로젝트 구조**: `@PROJECT_STRUCTURE.md` - 완전한 구조, 기술 스택, 환경 설정
+#### 📂 주요 참조 문서
+- **🎯 개발 가이드**: `@CLAUDE.md` - 전체 프로젝트 지침 및 문서 내비게이션
+- **🏗️ 프로젝트 구조**: `@PROJECT_STRUCTURE.md` - 완전한 디렉터리 구조 및 환경 설정
+- **🔧 기술 스택**: `@TECHNOLOGY_STACK.md` - 모든 기술 사양, 아키텍처, 의존성
 - **🌍 환경 설정**: `@ENVIRONMENT.md` - Python 환경, 명령어, 문제 해결
 
-#### 모듈별 구현 상세 ✅ **모든 모듈 완료**
-| 모듈 | 문서 위치 | 상태 | 주요 내용 |
-|------|-----------|------|-----------|
-| 리스크 관리 | `@src/risk_management/CLAUDE.md` | ✅ 완료 | RiskController, PositionSizer, PositionManager |
-| 전략 엔진 | `@src/strategy_engine/CLAUDE.md` | ✅ 완료 | 4개 전략 + 레짐 감지 + 포트폴리오 통합 |
-| 포트폴리오 관리 | `@src/portfolio/CLAUDE.md` | ✅ 완료 | Markowitz 최적화 + 성과 분석 |
-| 코어 인프라 | `@src/core/CLAUDE.md` | ✅ 완료 | 데이터베이스 + 설정 + 유틸리티 |
-| 백테스팅 | `@src/backtesting/CLAUDE.md` | ✅ 완료 | 데이터 로더 + 검증 + 백테스트 엔진 |
-| 유틸리티 | `@src/utils/CLAUDE.md` | ✅ 완료 | 로깅 + 금융수학 + 시간유틸리티 |
-| 주문 실행 | `@src/execution/CLAUDE.md` | 🚀 다음 단계 | Phase 4.1-4.2 구현 예정 |
+#### 📚 구현된 모듈 문서 (6개 완료)
+각 모듈의 구현 상세는 해당 모듈의 CLAUDE.md 파일에서 확인:
+- **리스크 관리**: `@src/risk_management/CLAUDE.md` ✅
+- **전략 엔진**: `@src/strategy_engine/CLAUDE.md` ✅
+- **포트폴리오**: `@src/portfolio/CLAUDE.md` ✅
+- **코어 인프라**: `@src/core/CLAUDE.md` ✅
+- **백테스팅**: `@src/backtesting/CLAUDE.md` ✅
+- **유틸리티**: `@src/utils/CLAUDE.md` ✅
 
-#### 기술 사양서
-- **🏛️ 시스템 아키텍처**: `@docs/project-system-architecture.md` - C4 모델, 컴포넌트 구조
-- **💰 금융공학 모델**: `@docs/project-system-design/2-financial-engineering.md` - Kelly, VaR 모델
-- **📈 전략 엔진 설계**: `@docs/project-system-design/3-strategy-engine.md` - 전략 구현 가이드
-- **⚠️ 리스크 관리 설계**: `@docs/project-system-design/4-risk-management.md` - 리스크 시스템 상세
-- **💼 포트폴리오 최적화**: `@docs/project-system-design/5-portfolio-optimization.md` - Markowitz 모델
-- **🔧 주문 실행 설계**: `@docs/project-system-design/6-execution-engine.md` - 실행 시스템 설계
+#### 🚀 다음 단계 문서
+- **주문 실행**: `@src/execution/CLAUDE.md` (Phase 4 구현 예정)
 
-#### 개발 방법론 및 가이드
-- **🧪 TDD 방법론**: `@docs/augmented-coding.md` - Red-Green-Refactor 개발 규칙
-- **🔧 엔지니어링 가이드**: `@docs/software-engineering-guide.md` - 코딩 표준 및 베스트 프랙티스
-- **📋 검증 체크리스트**: `@docs/project-system-design/13-validation-checklist.md` - 품질 보증 기준
-- **🛠️ 구현 가이드**: `@docs/project-system-design/14-implementation-guide.md` - 단계별 구현 지침
-
-### 🔍 빠른 참조 가이드
-
-#### Phase 4 개발시 필수 문서
-1. **주문 실행 설계**: `@docs/project-system-design/6-execution-engine.md`
-2. **시장 미시구조**: `@docs/project-system-design/7-market-microstructure.md`
-3. **TDD 방법론**: `@docs/augmented-coding.md`
-4. **엔지니어링 가이드**: `@docs/software-engineering-guide.md`
-
-#### 문제 해결시 참조 순서
-1. 해당 모듈의 `CLAUDE.md` 확인
-2. `@PROJECT_STRUCTURE.md`에서 환경 설정 확인
-3. `@docs/project-system-design/` 관련 설계 문서 참조
-4. `@docs/augmented-coding.md`에서 TDD 방법론 확인
-
-### 📊 문서 상태 현황
-- **완료된 구현 문서**: 6개 모듈 CLAUDE.md ✅
-- **설계 문서**: 14개 완전 작성 ✅
-- **개발 가이드**: 3개 핵심 문서 ✅
-- **다음 필요 문서**: Phase 4 실행 모듈 상세 구현 가이드
+📋 **완전한 문서 목록 및 설계 사양**: `@CLAUDE.md` - 모든 기술 문서 내비게이션
 
 ---
 
