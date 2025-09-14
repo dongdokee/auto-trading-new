@@ -184,37 +184,77 @@ When starting the next development session, begin with these tasks in order:
 
 ## Development Commands
 
-### Environment Setup (Phase 1.1)
+### Environment Setup ✅ **COMPLETED (2025-09-14)**
+
+**🎯 CRITICAL: Use Anaconda Environment**
+- **Environment Name**: `autotrading`
+- **Python Version**: 3.10.18
+- **Location**: `C:\Users\dongd\anaconda3\envs\autotrading`
+
+**Environment Activation:**
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# OR: venv\Scripts\activate  # Windows
+# Method 1: Standard conda activation
+conda activate autotrading
 
-# Install dependencies (after requirements.txt created)
-pip install -r requirements.txt
-
-# Run tests (TDD workflow)
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_risk_management.py -v
+# Method 2: Direct path activation
+C:\Users\dongd\anaconda3\Scripts\conda.exe activate autotrading
 ```
+
+**⚠️ IMPORTANT: Python Execution Paths**
+```bash
+# ❌ WRONG: Uses system Python 3.13 (causes compatibility issues)
+python script.py
+pip install package
+
+# ✅ CORRECT: Uses autotrading environment Python 3.10
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" script.py
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package
+
+# ✅ ALTERNATIVE: Activate environment first, then use relative paths
+conda activate autotrading && python script.py
+```
+
+### Package Versions (Installed 2025-09-14)
+**Core packages successfully installed:**
+- numpy: 2.2.5 (newer than requirements.txt 1.26.4)
+- pandas: 2.3.2 (newer than requirements.txt 2.2.2)
+- scipy: 1.15.3 (newer than requirements.txt 1.13.1)
+- ccxt: 4.4.82 (newer than requirements.txt 4.3.26)
+- scikit-learn: 1.7.1
+- pydantic: 2.8.2
+- aiohttp: 3.10.1
+- websockets: 12.0
+- All async libraries (asyncio-mqtt, aioredis, aiodns) ✅
 
 ### TDD Workflow Commands
 ```bash
-# Run tests continuously during development
-pytest --watch
+# ALWAYS activate environment first or use full paths
+
+# Run tests (with environment)
+conda activate autotrading && pytest tests/ -v
+
+# Run tests (with full path)
+"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
+
+# Run specific test file
+conda activate autotrading && pytest tests/test_risk_management.py -v
 
 # Run tests with coverage
-pytest --cov=src tests/
+conda activate autotrading && pytest --cov=src tests/
 
 # Run linting (when setup)
-flake8 src/ tests/
-mypy src/
+conda activate autotrading && flake8 src/ tests/
+conda activate autotrading && mypy src/
 ```
 
-*Note: These commands will be functional once Phase 1.1 is completed.*
+### Package Installation
+```bash
+# For scientific packages: Use conda first (avoids Windows compiler issues)
+conda install -n autotrading package_name
+
+# For other packages: Use pip with full path
+"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package_name
+```
 
 ## Key Implementation Areas by Priority
 
