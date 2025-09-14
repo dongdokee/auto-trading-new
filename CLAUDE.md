@@ -4,7 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Korean cryptocurrency futures automated trading system (코인 선물 자동매매 시스템) currently in the design and planning phase. The system implements advanced quantitative trading strategies with sophisticated risk management and portfolio optimization.
+This is a Korean cryptocurrency futures automated trading system (코인 선물 자동매매 시스템) currently transitioning from design phase to implementation. The system implements advanced quantitative trading strategies with sophisticated risk management and portfolio optimization.
+
+## Current Development Status
+
+**Project Phase**: Implementation Ready (Phase 0 → Phase 1)
+**Implementation Progress**: 0% (Design Complete, Implementation Starting)
+**Last Updated**: 2025-09-14
+**Status**: 🟡 Ready to begin implementation
+
+📋 **Progress Tracking**: `@IMPLEMENTATION_PROGRESS.md` - Detailed progress and next steps
+📋 **Implementation Plan**: `@docs/AGREED_IMPLEMENTATION_PLAN.md` - Complete 5-phase roadmap
 
 ## Architecture Overview
 
@@ -153,9 +163,58 @@ Given the financial nature of the system:
 - `@docs/project-system-design/13-validation-checklist.md` for testing requirements
 - `@docs/software-engineering-guide.md` (섹션 2.3) for testing best practices
 
+## Next Immediate Tasks
+
+When starting the next development session, begin with these tasks in order:
+
+### 🚀 Phase 1.1: Project Structure Setup
+1. **Create directory structure** - Standard Python project layout
+2. **Write requirements.txt** - Install confirmed technology stack
+3. **Setup basic configuration files** - `.env.example`, `config.yaml`
+4. **Initialize TDD workflow** - First failing test for `RiskController`
+
+### 📋 Implementation Checklist
+- [ ] `src/`, `tests/`, `config/` directories created
+- [ ] `requirements.txt` with confirmed packages
+- [ ] First failing test written (`test_risk_controller.py`)
+- [ ] Basic logging system setup
+- [ ] Environment variable management
+
+**Reference for next steps**: `@IMPLEMENTATION_PROGRESS.md` section "다음 즉시 작업"
+
 ## Development Commands
 
-*Note: This section will be updated when the implementation begins and specific build/test/deployment scripts are created.*
+### Environment Setup (Phase 1.1)
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# OR: venv\Scripts\activate  # Windows
+
+# Install dependencies (after requirements.txt created)
+pip install -r requirements.txt
+
+# Run tests (TDD workflow)
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_risk_management.py -v
+```
+
+### TDD Workflow Commands
+```bash
+# Run tests continuously during development
+pytest --watch
+
+# Run tests with coverage
+pytest --cov=src tests/
+
+# Run linting (when setup)
+flake8 src/ tests/
+mypy src/
+```
+
+*Note: These commands will be functional once Phase 1.1 is completed.*
 
 ## Key Implementation Areas by Priority
 
