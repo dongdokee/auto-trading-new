@@ -5,6 +5,7 @@ TDD 방식으로 구현됨 - 설정 가능한 파라미터 구조
 """
 from typing import Dict, List, Tuple, Optional
 import numpy as np
+from src.utils.logger import TradingLogger, get_trading_logger
 
 
 class RiskController:
@@ -20,9 +21,24 @@ class RiskController:
                  max_leverage: float = 10.0,           # 최대 레버리지 10x (기본값)
                  liquidation_prob_24h: float = 0.005,  # 24시간 청산 확률 0.5%
                  max_consecutive_loss_days: int = 7,   # 🚀 NEW: 최대 연속 손실일 (기본값: 7일)
-                 allow_short: bool = False):           # 숏 포지션 허용 여부 (기본값: 롱 온리)
+                 allow_short: bool = False,            # 숏 포지션 허용 여부 (기본값: 롱 온리)
+                 logger: Optional[TradingLogger] = None):  # 로깅 시스템
 
         self.initial_capital = initial_capital_usdt
+
+        # 로깅 시스템 초기화
+        self.logger = logger or get_trading_logger("risk_controller", log_to_file=False)
+
+        # 리스크 컨트롤러 초기화 로그
+        self.logger.log_risk(
+            "Risk controller initialized",
+            level="INFO",
+            initial_capital_usdt=initial_capital_usdt,
+            var_daily_pct=var_daily_pct,
+            max_drawdown_pct=max_drawdown_pct,
+            max_leverage=max_leverage,
+            allow_short=allow_short
+        )
 
         # 설정 가능한 리스크 한도 (USDT 기준)
         self.risk_limits = {
@@ -55,8 +71,28 @@ class RiskController:
         current_var = portfolio_state.get('current_var_usdt', 0.0)
         var_limit = self.risk_limits['var_daily_usdt']
 
+        # VaR 상태 로깅 (INFO 레벨)
+        self.logger.log_risk(
+            "VaR limit check performed",
+            level="INFO",
+            current_var_usdt=current_var,
+            var_limit_usdt=var_limit,
+            utilization_pct=(current_var / var_limit * 100) if var_limit > 0 else 0
+        )
+
         if current_var > var_limit:
             violations.append(('VAR_USDT', current_var))
+
+            # VaR 한도 위반 경고 로깅 (WARNING 레벨)
+            self.logger.log_risk(
+                "VaR limit exceeded - Risk threshold violation detected",
+                level="WARNING",
+                event_type="VAR_LIMIT_VIOLATION",
+                current_var_usdt=current_var,
+                var_limit_usdt=var_limit,
+                excess_usdt=current_var - var_limit,
+                excess_pct=((current_var - var_limit) / var_limit * 100)
+            )
 
         return violations
 
@@ -256,13 +292,41 @@ class RiskController:
         Returns:
             float: 현재 드로다운 비율 (0.1 = 10% 드로다운)
         """
+        previous_drawdown = self.current_drawdown
+
         if current_equity > self.high_water_mark:
             # 새로운 고점 달성
+            old_hwm = self.high_water_mark
             self.high_water_mark = current_equity
             self.current_drawdown = 0.0
+
+            # 새로운 고점 달성 로깅
+            self.logger.log_portfolio(
+                "New high water mark achieved",
+                event_type="HIGH_WATER_MARK_UPDATE",
+                previous_hwm=old_hwm,
+                new_hwm=current_equity,
+                equity_increase_usdt=current_equity - old_hwm,
+                equity_increase_pct=((current_equity - old_hwm) / old_hwm * 100)
+            )
         else:
             # 드로다운 계산
             self.current_drawdown = (self.high_water_mark - current_equity) / self.high_water_mark
+
+            # 드로다운 상태 로깅
+            if previous_drawdown != self.current_drawdown:
+                severity = self.get_drawdown_severity_level()
+
+                self.logger.log_risk(
+                    "Drawdown updated",
+                    level="INFO" if self.current_drawdown < 0.05 else "WARNING",
+                    event_type="DRAWDOWN_UPDATE",
+                    current_equity=current_equity,
+                    high_water_mark=self.high_water_mark,
+                    drawdown_pct=self.current_drawdown * 100,
+                    drawdown_usdt=self.high_water_mark - current_equity,
+                    severity_level=severity
+                )
 
         return float(self.current_drawdown)
 
@@ -284,6 +348,19 @@ class RiskController:
 
         if current_drawdown > max_drawdown_limit:
             violations.append(('DRAWDOWN', current_drawdown))
+
+            # 드로다운 한도 위반 경고 로깅 (CRITICAL 레벨)
+            self.logger.log_risk(
+                "CRITICAL: Maximum drawdown limit exceeded - Trading may be halted",
+                level="CRITICAL",
+                event_type="DRAWDOWN_LIMIT_VIOLATION",
+                current_equity=current_equity,
+                high_water_mark=self.high_water_mark,
+                current_drawdown_pct=current_drawdown * 100,
+                max_drawdown_limit_pct=max_drawdown_limit * 100,
+                excess_drawdown_pct=(current_drawdown - max_drawdown_limit) * 100,
+                drawdown_usdt=self.high_water_mark - current_equity
+            )
 
         return violations
 

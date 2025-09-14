@@ -6,14 +6,23 @@
 from typing import Dict, Optional
 from datetime import datetime
 from .risk_management import RiskController
+from src.utils.logger import TradingLogger, get_trading_logger
 
 
 class PositionManager:
     """포지션 생명주기 관리"""
 
-    def __init__(self, risk_controller: RiskController):
+    def __init__(self, risk_controller: RiskController, logger: Optional[TradingLogger] = None):
         self.risk_controller = risk_controller
         self.positions = {}
+        self.logger = logger or get_trading_logger("position_manager", log_to_file=False)
+
+        # 포지션 매니저 초기화 로그
+        self.logger.info(
+            "Position manager initialized",
+            component="PositionManager",
+            initial_positions_count=len(self.positions)
+        )
 
     def open_position(self, symbol: str, side: str, size: float,
                      price: float, leverage: float) -> Dict:
@@ -39,6 +48,22 @@ class PositionManager:
         }
 
         self.positions[symbol] = position
+
+        # 포지션 오픈 로깅
+        self.logger.log_trade(
+            "Position opened",
+            symbol=symbol,
+            side=side,
+            size=size,
+            entry_price=price,
+            leverage=leverage,
+            margin=position['margin'],
+            liquidation_price=position['liquidation_price'],
+            notional_usdt=size * price,
+            liquidation_distance_pct=abs(position['liquidation_price'] - price) / price * 100,
+            open_time=position['open_time'].isoformat()
+        )
+
         return position
 
     def update_position(self, symbol: str, current_price: float) -> Optional[Dict]:
@@ -85,6 +110,26 @@ class PositionManager:
         position['close_price'] = price
         position['close_time'] = datetime.now()
         position['close_reason'] = reason
+
+        # 포지션 클로즈 로깅
+        holding_duration = (position['close_time'] - position['open_time']).total_seconds()
+
+        self.logger.log_trade(
+            "Position closed",
+            symbol=symbol,
+            side=position['side'],
+            size=position['size'],
+            entry_price=position['entry_price'],
+            close_price=price,
+            leverage=position['leverage'],
+            realized_pnl=final_pnl,
+            return_pct=(final_pnl / (position['size'] * position['entry_price']) * 100),
+            holding_duration_seconds=holding_duration,
+            holding_duration_minutes=holding_duration / 60,
+            close_reason=reason,
+            open_time=position['open_time'].isoformat(),
+            close_time=position['close_time'].isoformat()
+        )
 
         # 포지션 제거
         del self.positions[symbol]

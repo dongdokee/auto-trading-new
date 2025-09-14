@@ -6,13 +6,25 @@
 from typing import Dict, Optional
 import numpy as np
 from .risk_management import RiskController
+from src.utils.logger import TradingLogger, get_trading_logger
 
 
 class PositionSizer:
     """청산 안전성을 고려한 포지션 사이징 (USDT 기준)"""
 
-    def __init__(self, risk_controller: RiskController):
+    def __init__(self, risk_controller: RiskController, logger: Optional[TradingLogger] = None):
         self.risk_controller = risk_controller
+        self.logger = logger or get_trading_logger("position_sizer", log_to_file=False)
+
+        # 포지션 사이저 초기화 로그
+        self.logger.info(
+            "Position sizer initialized",
+            component="PositionSizer",
+            risk_controller_config={
+                'initial_capital': risk_controller.initial_capital,
+                'max_leverage': risk_controller.risk_limits['max_leverage']
+            }
+        )
 
     def calculate_position_size(self, signal: Dict,
                                market_state: Dict,
@@ -78,7 +90,31 @@ class PositionSizer:
         constrained_size = max(min_size, min(final_size, max_size))
 
         # 거래소 lot size로 반올림
-        return self._round_to_lot_size(constrained_size, market_state.get('lot_size', 0.001))
+        final_position_size = self._round_to_lot_size(constrained_size, market_state.get('lot_size', 0.001))
+
+        # 포지션 사이징 결과 로깅
+        self.logger.log_trade(
+            "Position size calculated",
+            symbol=symbol,
+            side=signal['side'],
+            signal_strength=signal_strength,
+            price=price,
+            kelly_size=kelly_size,
+            atr_size=atr_size,
+            liquidation_safe_size=liquidation_safe_size,
+            var_constrained_size=var_constrained_size,
+            correlation_factor=correlation_factor,
+            base_size=base_size,
+            final_size=final_size,
+            constrained_size=constrained_size,
+            final_position_size=final_position_size,
+            position_notional_usdt=final_position_size * price,
+            limiting_factor=self._identify_limiting_factor(
+                kelly_size, atr_size, liquidation_safe_size, var_constrained_size
+            )
+        )
+
+        return final_position_size
 
     def _calculate_kelly_based_size(self, signal: Dict, market_state: Dict,
                                    portfolio_state: Dict) -> float:
@@ -220,3 +256,17 @@ class PositionSizer:
         if lot_size <= 0:
             return float(size)
         return float(np.floor(size / lot_size) * lot_size)
+
+    def _identify_limiting_factor(self, kelly_size: float, atr_size: float,
+                                liquidation_safe_size: float, var_constrained_size: float) -> str:
+        """가장 제한적인 요인 식별"""
+        min_size = min(kelly_size, atr_size, liquidation_safe_size, var_constrained_size)
+
+        if min_size == kelly_size:
+            return "KELLY_CRITERION"
+        elif min_size == atr_size:
+            return "ATR_RISK"
+        elif min_size == liquidation_safe_size:
+            return "LIQUIDATION_SAFETY"
+        else:
+            return "VAR_CONSTRAINT"

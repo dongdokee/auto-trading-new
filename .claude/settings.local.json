@@ -12,7 +12,22 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_position_management.py -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/ -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_integration.py -v)",
-      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/ -v --tb=short)"
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/ -v --tb=short)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_utils/test_logger.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_utils/test_logger.py::TestTradingLogger::test_should_create_trading_logger_with_default_config -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_utils/test_logger.py::TestTradingLogger -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_utils/test_logger.py::TestTradeContext -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_utils/test_logger.py::TestSensitiveDataFilter -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_utils/test_logger.py::TestLoggingPerformance::test_should_handle_high_frequency_logging_efficiently -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_utils/test_logger.py::TestStructuredLogging -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py::TestRiskController::test_should_create_risk_controller_with_default_config -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py -k \"create\" -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py --collect-only)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py::TestRiskController::test_should_initialize_with_correct_usdt_capital -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_risk_management/test_risk_controller.py::TestRiskController::test_should_detect_var_limit_violation -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/integration/test_risk_management_integration.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/ -v --tb=short)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_utils/test_logger.py::TestStructuredLogging::test_should_output_valid_json_format -v)"
     ],
     "deny": [],
     "ask": []
