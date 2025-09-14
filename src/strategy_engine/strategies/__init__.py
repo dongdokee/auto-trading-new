@@ -17,8 +17,12 @@ Each strategy implements the BaseStrategy interface and provides:
 
 from .trend_following import TrendFollowingStrategy
 from .mean_reversion import MeanReversionStrategy
+from .range_trading import RangeTradingStrategy
+from .funding_arbitrage import FundingArbitrageStrategy
 
 __all__ = [
     'TrendFollowingStrategy',
     'MeanReversionStrategy',
+    'RangeTradingStrategy',
+    'FundingArbitrageStrategy',
 ]

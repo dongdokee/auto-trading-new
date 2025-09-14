@@ -30,6 +30,8 @@ from .strategy_manager import StrategyManager
 from .strategies import (
     TrendFollowingStrategy,
     MeanReversionStrategy,
+    RangeTradingStrategy,
+    FundingArbitrageStrategy,
 )
 
 __all__ = [
@@ -47,6 +49,8 @@ __all__ = [
     # Strategy implementations
     'TrendFollowingStrategy',
     'MeanReversionStrategy',
+    'RangeTradingStrategy',
+    'FundingArbitrageStrategy',
 ]
 
 __version__ = "1.0.0"

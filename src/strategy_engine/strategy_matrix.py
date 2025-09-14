@@ -34,46 +34,55 @@ class StrategyMatrix:
         """Initialize strategy matrix with default allocations"""
 
         # Base allocation matrix: (regime, volatility) -> {strategy: weight}
+        # Updated to include new strategies: RangeTrading and FundingArbitrage
         self.base_allocations = {
             ('BULL', 'LOW'): {
-                'TrendFollowing': 0.7,
+                'TrendFollowing': 0.6,
                 'MeanReversion': 0.2,
-                'RangeTrading': 0.1
+                'RangeTrading': 0.1,
+                'FundingArbitrage': 0.1
             },
             ('BULL', 'HIGH'): {
-                'TrendFollowing': 0.5,
+                'TrendFollowing': 0.4,
                 'MeanReversion': 0.3,
+                'RangeTrading': 0.1,
                 'FundingArbitrage': 0.2
             },
             ('BEAR', 'LOW'): {
-                'MeanReversion': 0.6,
+                'MeanReversion': 0.5,
                 'TrendFollowing': 0.3,
+                'RangeTrading': 0.1,
                 'FundingArbitrage': 0.1
             },
             ('BEAR', 'HIGH'): {
-                'MeanReversion': 0.4,
-                'TrendFollowing': 0.3,
+                'MeanReversion': 0.35,
+                'TrendFollowing': 0.25,
+                'RangeTrading': 0.1,
                 'FundingArbitrage': 0.3
             },
             ('SIDEWAYS', 'LOW'): {
-                'RangeTrading': 0.5,
-                'MeanReversion': 0.4,
+                'RangeTrading': 0.45,
+                'MeanReversion': 0.35,
+                'TrendFollowing': 0.1,
                 'FundingArbitrage': 0.1
             },
             ('SIDEWAYS', 'HIGH'): {
-                'MeanReversion': 0.5,
-                'RangeTrading': 0.3,
+                'RangeTrading': 0.4,
+                'MeanReversion': 0.3,
+                'TrendFollowing': 0.1,
                 'FundingArbitrage': 0.2
             },
             ('NEUTRAL', 'LOW'): {
-                'MeanReversion': 0.4,
-                'TrendFollowing': 0.3,
-                'RangeTrading': 0.3
+                'MeanReversion': 0.3,
+                'TrendFollowing': 0.25,
+                'RangeTrading': 0.25,
+                'FundingArbitrage': 0.2
             },
             ('NEUTRAL', 'HIGH'): {
-                'FundingArbitrage': 0.5,
-                'MeanReversion': 0.3,
-                'TrendFollowing': 0.2
+                'FundingArbitrage': 0.4,
+                'MeanReversion': 0.25,
+                'TrendFollowing': 0.15,
+                'RangeTrading': 0.2
             }
         }
 
