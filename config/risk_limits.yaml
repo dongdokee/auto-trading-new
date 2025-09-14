@@ -1,0 +1,126 @@
+# Risk Management Limits Configuration
+# 리스크 관리 한계 설정
+
+# Global Risk Limits
+global_limits:
+  # Portfolio level limits
+  max_portfolio_value: 1000000  # $1M USD maximum portfolio value
+  max_daily_loss_usd: 10000     # $10K maximum daily loss
+  max_daily_loss_pct: 0.02      # 2% maximum daily loss percentage
+
+  # Drawdown limits
+  max_drawdown_pct: 0.05        # 5% maximum drawdown from peak
+  max_consecutive_losses: 5      # Maximum consecutive losing trades
+
+  # Leverage limits
+  max_leverage: 3.0             # Maximum leverage ratio
+  max_gross_exposure: 2.0       # Maximum gross exposure (long + short positions)
+
+  # Position concentration
+  max_single_position_pct: 0.20  # 20% maximum single position size
+  max_sector_exposure_pct: 0.40  # 40% maximum exposure to single sector/asset class
+
+# Asset-specific limits
+asset_limits:
+  "BTC/USDT":
+    max_position_size_usd: 50000   # $50K maximum position
+    max_position_size_pct: 0.15    # 15% of portfolio maximum
+    max_daily_trades: 10           # Maximum trades per day
+    min_time_between_trades: 300   # 5 minutes minimum between trades
+
+  "ETH/USDT":
+    max_position_size_usd: 30000
+    max_position_size_pct: 0.10
+    max_daily_trades: 15
+    min_time_between_trades: 180   # 3 minutes
+
+  "BNB/USDT":
+    max_position_size_usd: 20000
+    max_position_size_pct: 0.08
+    max_daily_trades: 8
+    min_time_between_trades: 600   # 10 minutes
+
+# VaR (Value at Risk) Configuration
+var_limits:
+  confidence_level: 0.95         # 95% confidence level
+  time_horizon: 1                # 1 day horizon
+  max_var_pct: 0.03             # 3% maximum VaR as % of portfolio
+  max_var_usd: 15000            # $15K maximum VaR in USD
+
+  # VaR calculation method
+  method: "historical"           # historical, parametric, monte_carlo
+  lookback_period: 252          # Trading days for historical VaR
+
+# Kelly Criterion Risk Controls
+kelly_controls:
+  max_kelly_fraction: 0.25       # Maximum 25% of full Kelly
+  min_kelly_fraction: 0.01       # Minimum 1% position size
+  lookback_period: 60           # Days for return estimation
+  confidence_threshold: 0.6     # Minimum confidence for signal
+
+# Stop Loss and Take Profit
+stop_loss:
+  default_stop_pct: 0.03        # 3% default stop loss
+  max_stop_pct: 0.10            # 10% maximum stop loss
+  trailing_stop: true           # Enable trailing stops
+  trailing_distance: 0.02       # 2% trailing distance
+
+take_profit:
+  default_profit_pct: 0.06      # 6% default take profit
+  max_profit_pct: 0.20          # 20% maximum take profit
+  partial_profit: true          # Enable partial profit taking
+  partial_levels:               # Partial profit levels
+    - level: 0.03               # 3% - take 30% of position
+      percentage: 0.3
+    - level: 0.06               # 6% - take 50% of remaining
+      percentage: 0.5
+
+# Time-based limits
+time_limits:
+  max_holding_period: 168       # 168 hours (1 week) maximum holding
+  min_holding_period: 0.25      # 15 minutes minimum holding
+  trading_hours:
+    enabled: false              # 24/7 crypto trading
+    start_time: "09:00"
+    end_time: "16:00"
+    timezone: "UTC"
+
+# Correlation limits
+correlation_limits:
+  max_pairwise_correlation: 0.7  # Maximum correlation between any two positions
+  correlation_window: 30         # Days for correlation calculation
+  correlation_threshold: 0.5     # Threshold for position reduction
+
+# Emergency controls
+emergency_controls:
+  # Circuit breakers
+  daily_loss_circuit_breaker: 0.05    # 5% daily loss triggers emergency stop
+  volatility_circuit_breaker: 3.0     # 3x normal volatility triggers pause
+
+  # Kill switch conditions
+  kill_switch_conditions:
+    - condition: "portfolio_loss_gt"
+      value: 0.10                     # 10% portfolio loss
+      action: "stop_all_trading"
+
+    - condition: "unrealized_loss_gt"
+      value: 0.15                     # 15% unrealized loss
+      action: "close_all_positions"
+
+    - condition: "api_error_rate_gt"
+      value: 0.50                     # 50% API error rate
+      action: "pause_trading"
+
+# Monitoring and alerts
+monitoring:
+  # Risk metric update frequency
+  risk_update_interval: 10      # seconds
+
+  # Alert thresholds (as percentage of limits)
+  alert_thresholds:
+    warning: 0.70               # Warning at 70% of limit
+    critical: 0.90              # Critical alert at 90% of limit
+
+  # Required approvals for limit overrides
+  override_approval_required: true
+  max_override_duration: 3600   # 1 hour maximum override

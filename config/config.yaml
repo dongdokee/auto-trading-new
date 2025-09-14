@@ -1,0 +1,79 @@
+# Main configuration for AutoTrading System
+# 자동매매 시스템 메인 설정
+
+system:
+  name: "AutoTrading System"
+  version: "1.0.0"
+  environment: "development"  # development, staging, production
+
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_path: "logs/trading.log"
+  max_file_size: "10MB"
+  backup_count: 5
+
+database:
+  postgresql:
+    host: "${POSTGRES_HOST:localhost}"
+    port: "${POSTGRES_PORT:5432}"
+    database: "${POSTGRES_DB:autotrading}"
+    user: "${POSTGRES_USER}"
+    password: "${POSTGRES_PASSWORD}"
+    pool_size: 20
+    max_overflow: 30
+
+  timescaledb:
+    host: "${TIMESCALE_HOST:localhost}"
+    port: "${TIMESCALE_PORT:5432}"
+    database: "${TIMESCALE_DB:market_data}"
+    user: "${TIMESCALE_USER}"
+    password: "${TIMESCALE_PASSWORD}"
+
+  redis:
+    host: "${REDIS_HOST:localhost}"
+    port: "${REDIS_PORT:6379}"
+    db: 0
+    password: "${REDIS_PASSWORD:}"
+    max_connections: 50
+
+exchanges:
+  binance:
+    api_key: "${BINANCE_API_KEY}"
+    api_secret: "${BINANCE_API_SECRET}"
+    testnet: true  # Set to false for production
+    rate_limit: 1200  # requests per minute
+
+  bybit:
+    api_key: "${BYBIT_API_KEY}"
+    api_secret: "${BYBIT_API_SECRET}"
+    testnet: true
+    rate_limit: 600
+
+trading:
+  mode: "paper"  # paper, live
+  base_currency: "USDT"
+  trading_pairs:
+    - "BTC/USDT"
+    - "ETH/USDT"
+    - "BNB/USDT"
+
+  execution:
+    max_orders_per_second: 10
+    order_timeout_seconds: 30
+    retry_attempts: 3
+    slippage_tolerance: 0.001  # 0.1%
+
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    metrics_interval: 10  # seconds
+
+  alerts:
+    enabled: true
+    webhook_url: "${ALERT_WEBHOOK_URL:}"
+
+  healthcheck:
+    port: 8080
+    interval: 30  # seconds
