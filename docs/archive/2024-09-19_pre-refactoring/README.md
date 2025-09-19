@@ -3,7 +3,7 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-green)
 ![Exchange](https://img.shields.io/badge/Exchange-Binance%20Futures-yellow)
-![Status](https://img.shields.io/badge/Status-70%25%20Complete-green)
+![Status](https://img.shields.io/badge/Status-Design%20%26%20Planning-orange)
 
 ## 📋 프로젝트 개요
 
@@ -148,11 +148,7 @@ AutoTradingNew/
 
 ## 🚀 시작하기
 
-> **현재 상태**: 프로젝트는 70% 완료 상태이며, 핵심 모듈들이 구현되어 있습니다. Phase 4.1 (주문 실행 엔진) 개발 준비 완료.
-
-### Quick Start
-**📋 빠른 시작**: `@QUICK_START.md` - 필수 명령어 및 개발 워크플로
-**📋 완전한 환경 설정**: `@PROJECT_STRUCTURE.md` - 기술 스택, 환경 설정, 모든 명령어
+> **참고**: 현재 프로젝트는 설계 및 기획 단계에 있으며, 구현은 아직 시작되지 않았습니다.
 
 ### 필수 요구사항
 - Python 3.10+
@@ -208,32 +204,21 @@ AutoTradingNew/
 
 ## 📚 문서 참조
 
-### Essential Documentation
-- **🎯 Development Guide**: `@CLAUDE.md` - Complete guidance and document navigation
-- **📊 Project Status**: `@PROJECT_STATUS.md` - Current progress, roadmap, milestones
-- **🏗️ Technical Foundation**: `@PROJECT_STRUCTURE.md` - Technology stack, environment, architecture
-- **🚀 Quick Start**: `@QUICK_START.md` - Essential commands and workflows
+### 핵심 시스템 문서
+- [시스템 아키텍처](docs/project-system-architecture.md) - C4 모델 완전 문서
+- [핵심 시스템](docs/project-system-design/1-core-system.md) - 메인 시스템 설계
+- [금융공학 모델](docs/project-system-design/2-financial-engineering.md) - Kelly 최적화 및 리스크 모델
+- [전략 엔진](docs/project-system-design/3-strategy-engine.md) - 멀티 전략 시스템
+- [리스크 관리](docs/project-system-design/4-risk-management.md) - VaR 및 드로다운 제어
 
-### Detailed Technical Documentation
-- **🏛️ System Architecture**: `@docs/project-system-architecture.md` - C4 model complete documentation
-- **🧪 TDD Methodology**: `@docs/augmented-coding.md` - Kent Beck TDD & Tidy First principles
-- **🔧 Engineering Guide**: `@docs/software-engineering-guide.md` - Comprehensive engineering guidelines
-- **🔧 Architecture Decisions**: `@docs/ARCHITECTURE_DECISIONS.md` - Technical decision records
-
-### Implementation Details
-**All implemented modules have detailed documentation in their respective `@src/[module]/CLAUDE.md` files:**
-- **Risk Management** ✅ COMPLETED
-- **Strategy Engine** ✅ COMPLETED
-- **Portfolio Optimization** ✅ COMPLETED
-- **Core Infrastructure** ✅ COMPLETED
-- **Backtesting Framework** ✅ COMPLETED
+### 개발 가이드
+- [개발 방법론](docs/augmented-coding.md) - Kent Beck TDD 및 Tidy First 원칙
+- [소프트웨어 엔지니어링](docs/software-engineering-guide.md) - 포괄적 엔지니어링 가이드라인
+- [Claude 개발 가이드](CLAUDE.md) - Claude Code 작업을 위한 가이드
 
 ## 🤝 기여하기
 
-프로젝트는 70% 완료 상태입니다. 기여 시 다음 문서를 참조하세요:
-- **🧪 TDD 방법론**: `@docs/augmented-coding.md` - 모든 코드는 TDD로 개발
-- **🔧 코딩 표준**: `@docs/software-engineering-guide.md` - 엔지니어링 가이드라인
-- **📋 문서 관리**: `@DOCUMENT_MANAGEMENT_GUIDE.md` - 문서 작성 규칙
+현재 프로젝트는 설계 단계이며, 기여 가이드라인은 구현이 시작되면 업데이트될 예정입니다.
 
 ## ⚠️ 면책 조항
 
@@ -245,6 +230,6 @@ TBD (구현 단계에서 결정 예정)
 
 ---
 
-**프로젝트 상태**: 70% 완료 (Phase 1-3.3 ✅ COMPLETED, Phase 4.1 Ready)
-**마지막 업데이트**: 2025년 9월 (문서 리팩토링 완료)
+**프로젝트 상태**: 설계 및 기획 단계
+**마지막 업데이트**: 2025년 1월
 **문의**: 프로젝트 이슈 또는 문의사항은 GitHub Issues를 통해 제출해 주세요.

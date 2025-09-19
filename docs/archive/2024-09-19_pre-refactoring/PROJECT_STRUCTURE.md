@@ -1,10 +1,9 @@
-# AutoTrading System - Project Structure & Technology Stack
-# 자동매매 시스템 프로젝트 구조 및 기술 스택
+# AutoTrading System - Project Structure Documentation
+# 자동매매 시스템 프로젝트 구조 문서
 
-**Single Source of Truth for**: Project Structure, Technology Stack, Environment Setup
-**Last Updated**: 2025-09-19 (Refactored: Consolidated structure, tech stack, and environment)
-**Phase**: Phase 3.3 Completed - 70% project completion
-**Status**: Ready for Phase 4.1 - Order Execution Engine
+**Generated**: 2025-09-14 (Updated: 2025-09-14)
+**Phase**: 1.2 - Risk Management Module Completed ✅
+**Status**: Position Sizing Engine Complete, Ready for Strategy Engine
 
 ## 📁 Complete Project Structure
 
@@ -130,163 +129,40 @@ AutoTradingNew/
 - **Bounded Contexts**: Clear separation of concerns
 - **Ubiquitous Language**: Consistent terminology across codebase
 
-## 🏗️ Technology Stack & Architecture
+## 🔧 Technology Stack
 
-### Core Technology Stack
+### **Backend & Core**
+- **Language**: Python 3.10.18 (Anaconda environment: `autotrading`)
+- **Concurrency**: asyncio for async operations
+- **Architecture**: Microservices with event-driven patterns, CQRS, hexagonal architecture
 
-#### Programming Language & Runtime
-- **Python**: 3.10.18 (Anaconda environment: `autotrading`)
-- **Virtual Environment**: Anaconda `autotrading` environment
-- **Package Management**: pip + conda (hybrid approach)
-
-#### Architecture Patterns
-- **Clean Architecture**: Domain-driven design
-- **Hexagonal Architecture**: Ports and adapters pattern
-- **Event-Driven Architecture**: Asynchronous event processing
-- **CQRS Pattern**: Command-query responsibility segregation
-- **Repository Pattern**: Data access abstraction
-
-#### Database & Storage
-- **Primary Database**: PostgreSQL 15+
-- **Time Series Data**: TimescaleDB (PostgreSQL extension)
-- **Migration**: Alembic 1.13.0+
-- **ORM**: SQLAlchemy 2.0+
-- **Connection Pooling**: asyncpg + SQLAlchemy async
-
-#### Async Processing & Networking
-- **Async Runtime**: asyncio (Python standard library)
-- **HTTP Client**: aiohttp 3.9.0+
-- **WebSocket**: websockets 12.0+
-- **Concurrency Control**: asyncio.Queue, asyncio.Lock
-
-#### Data Analysis & Computation
-- **Numerical Computing**: numpy 2.2.5
-- **Data Manipulation**: pandas 2.3.2
-- **Scientific Computing**: scipy 1.15.3
-- **Statistical Analysis**: statsmodels 0.14.0+
-- **Machine Learning**: scikit-learn 1.7.1
-
-#### Financial Data & API Integration
-- **Exchange API**: ccxt 4.4.82 (multi-exchange support)
-- **REST API**: aiohttp-based async calls
-- **WebSocket Streams**: Real-time market data
-- **Rate Limiting**: asyncio-based token bucket implementation
-
-#### Testing Framework
-- **Unit Testing**: pytest 8.0+
-- **Async Testing**: pytest-asyncio 0.23.0+
-- **Mocking**: pytest-mock, unittest.mock
-- **Test Coverage**: pytest-cov
-
-#### Logging & Monitoring
-- **Structured Logging**: structlog 24.2.0
-- **Log Format**: JSON structured logs
-- **Sensitive Data Filtering**: Custom filter implementation
-- **Performance Monitoring**: Custom metrics collection
-
-#### Configuration Management
-- **Configuration Model**: Pydantic 2.0+ (type-safe configuration)
-- **Environment Variables**: python-dotenv 1.0.0+
-- **YAML Configuration**: PyYAML 6.0+
-- **Configuration Validation**: Pydantic-based schema validation
-
-### System Architecture Layers
-
-#### 1. Presentation Layer
-- **CLI Interface**: argparse-based command line tools
-- **Configuration Interface**: Environment variables + YAML files
-- **Monitoring Dashboard**: (Future implementation)
-
-#### 2. Application Layer
-- **Strategy Manager**: Strategy Engine orchestration
-- **Portfolio Manager**: Asset allocation and optimization
-- **Order Executor**: (Phase 4 implementation)
-- **Risk Controller**: Risk management and monitoring
-
-#### 3. Domain Layer
-- **Trading Strategies**: Pure business logic
-- **Risk Models**: Kelly Criterion, VaR calculations
-- **Position Management**: Position lifecycle management
-- **Market Data**: OHLCV and metadata models
-
-#### 4. Infrastructure Layer
-- **Data Storage**: PostgreSQL + TimescaleDB
-- **External APIs**: Binance Futures API integration
-- **Real-time Data**: WebSocket stream processing
-- **Logging System**: Structured logs and audit trails
-
-### Development Tools & Environment
-
-#### Development Environment
-- **IDE Support**: VS Code, PyCharm compatible
-- **Linting**: flake8, black (code formatting)
-- **Type Checking**: mypy (gradual type checking)
-- **Dependency Management**: requirements.txt + environment.yml
-
-#### Version Control & CI/CD
-- **VCS**: Git (local development)
-- **Branch Strategy**: Feature branch workflow
-- **Commit Convention**: TDD-based structural/behavioral change distinction
-
-#### Security & Encryption
-- **API Key Management**: Environment variables + .env files
-- **Sensitive Data**: Automatic masking in logs
-- **HTTPS**: aiohttp-based secure API communication
-- **Authentication**: Binance API signature and authentication processing
-
-### Dependencies & Packages
-
-#### Core Dependencies (requirements.txt)
+### **Core Dependencies** (requirements.txt) ✅ **INSTALLED (2025-09-14)**
 ```
-# Data Analysis & Computation
-pandas==2.3.2
-numpy==2.2.5
-scipy==1.15.3
-scikit-learn==1.7.1
-statsmodels>=0.14.0
-
-# Async Processing & Networking
-aiohttp>=3.9.0
-websockets==12.0
-asyncio-throttle>=1.0.0
-
-# Database & ORM
-sqlalchemy>=2.0.0
-alembic>=1.13.0
-asyncpg>=0.29.0
-psycopg2-binary>=2.9.0
-
-# Exchange API & Financial Data
-ccxt==4.4.82
-python-dotenv>=1.0.0
-
-# Configuration & Validation
-pydantic>=2.0.0
-PyYAML>=6.0
-
-# Logging & Monitoring
-structlog==24.2.0
-
-# Testing Framework
-pytest>=8.0.0
-pytest-asyncio>=0.23.0
-pytest-mock>=3.12.0
-pytest-cov>=4.0.0
+📊 Data & Computation:     numpy 2.2.5, pandas 2.3.2, scipy 1.15.3, numba
+💰 Quantitative Finance:   QuantLib, arch (GARCH), hmmlearn (HMM), cvxpy
+🤖 Machine Learning:       scikit-learn 1.7.1, lightgbm
+🗄️ Databases:             asyncpg (PostgreSQL), redis, sqlalchemy
+⚡ Exchange Connectivity:  ccxt 4.4.82, websockets 12.0
+🔄 Communication:          grpcio, aiohttp 3.10.1, httpx
+📝 Configuration:          pydantic 2.8.2, python-dotenv, pyyaml
+📡 Monitoring:             structlog, prometheus-client
+🔒 Security:               cryptography
 ```
 
-#### Anaconda Environment (environment.yml)
-```yaml
-name: autotrading
-dependencies:
-  - python=3.10.18
-  - pandas=2.3.2
-  - numpy=2.2.5
-  - scipy=1.15.3
-  - scikit-learn=1.7.1
-  - pip
-  - pip:
-    - -r requirements.txt
+### **Development Dependencies** (requirements-dev.txt)
 ```
+🧪 Testing:               pytest, pytest-asyncio, pytest-cov, hypothesis
+🎨 Code Quality:          black, isort, flake8, mypy, pylint
+📚 Documentation:         sphinx, sphinx-rtd-theme
+🔍 Profiling:             py-spy, memory-profiler, line-profiler
+🏭 Test Data:             factory-boy, freezegun
+```
+
+### **Infrastructure & Databases**
+- **Databases**: PostgreSQL (transactional), TimescaleDB (time series), Redis (caching/state)
+- **Communication**: gRPC (inter-service), WebSocket (market data)
+- **Monitoring**: Prometheus + Grafana, AlertManager
+- **Deployment**: Docker, potentially Kubernetes for orchestration
 
 ## 📋 Implementation Priorities
 
@@ -332,26 +208,14 @@ dependencies:
 - Audit logging for all trading activities
 - Backup and disaster recovery procedures
 
-## 🚀 Development Environment Setup
+## 🚀 Development Environment
 
-### Python Environment Details
-- **Environment Name**: `autotrading`
-- **Python Version**: 3.10.18
-- **Environment Path**: `C:\Users\dongd\anaconda3\envs\autotrading`
-- **Status**: ✅ Fully configured and tested (222 tests passing)
-- **Verification Date**: 2025-09-15
+**📋 Complete Environment Guide**: `@ENVIRONMENT.md` - Python setup, all commands, troubleshooting, package management
+**Status**: ✅ Anaconda environment `autotrading` (Python 3.10.18) configured and fully tested
+**Quick Reference**: Use direct paths for all commands (conda activation issues resolved with direct execution)
 
-### Critical Environment Issues & Solutions
 
-#### ⚠️ Environment Activation Problem
-**Issue**: Standard conda activation commands fail in this system
-```bash
-# ❌ FAILED: These commands don't work
-conda activate autotrading                           # Command not found
-C:\Users\dongd\anaconda3\Scripts\conda.exe activate  # CondaError: Run 'conda init'
-```
-
-#### ✅ Mandatory Solution: Direct Path Execution
+**⚠️ MANDATORY: Direct Path Execution Required**
 ```bash
 # ❌ WRONG: Uses system Python 3.13 (causes compatibility issues)
 python script.py
@@ -365,9 +229,7 @@ pip install package
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
 ```
 
-### Development Commands
-
-#### Package Installation
+### **Package Installation Commands**
 ```bash
 # ⚠️ CRITICAL: conda install may fail due to activation issues
 # Use direct pip path for all installations
@@ -386,8 +248,7 @@ cp .env.example .env
 # Edit .env with your actual values
 ```
 
-#### TDD Workflow Commands
-⚠️ **CRITICAL: ALWAYS use direct paths**
+### **TDD Workflow Commands** ⚠️ **CRITICAL: ALWAYS use direct paths**
 ```bash
 # Run all tests
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
@@ -402,14 +263,6 @@ cp .env.example .env
 # Run with coverage (when setup)
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest --cov=src tests/
 
-# Run specific test cases by module
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_strategy_engine/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_portfolio/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_backtesting/ -v
-```
-
-#### Code Quality Tools
-```bash
 # Code quality checks (when setup)
 "/c/Users/dongd/anaconda3/envs/autotrading/Scripts/flake8.exe" src/ tests/
 "/c/Users/dongd/anaconda3/envs/autotrading/Scripts/mypy.exe" src/
@@ -417,7 +270,7 @@ cp .env.example .env
 "/c/Users/dongd/anaconda3/envs/autotrading/Scripts/isort.exe" src/ tests/
 ```
 
-#### System Execution (Future Phases)
+### **System Execution** (Future)
 ```bash
 # Main trading system
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/run_trading.py
@@ -428,136 +281,6 @@ cp .env.example .env
 # Paper trading
 "/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/paper_trading.py
 ```
-
-### Package Installation Status
-
-#### Core Dependencies ✅ VERIFIED INSTALLED
-- **numpy**: 2.2.5 ✅
-- **pandas**: 2.3.2 ✅
-- **scipy**: 1.15.3 ✅
-- **scikit-learn**: 1.7.1 ✅
-
-#### Financial & Async Libraries ✅ VERIFIED INSTALLED
-- **ccxt**: 4.4.82 ✅ (Cryptocurrency exchange library)
-- **aiohttp**: ✅ (Async HTTP client)
-- **aioredis**: ✅ (Async Redis client)
-- **websockets**: 12.0 ✅ (WebSocket support)
-- **httpx**: ✅ (Modern HTTP client)
-
-#### Configuration & Validation ✅ VERIFIED INSTALLED
-- **pydantic**: 2.8.2 ✅ (Data validation)
-- **python-dotenv**: ✅ (Environment variable management)
-- **cryptography**: ✅ (Encryption support)
-
-#### Logging & Structure ✅ VERIFIED INSTALLED
-- **structlog**: 24.2.0 ✅ (Structured logging)
-
-#### Testing Framework ✅ READY
-- **pytest**: ✅ (Testing framework - ready for use)
-
-#### Future Installation (Install when needed)
-- **arch**: GARCH models for volatility forecasting
-- **hmmlearn**: Hidden Markov Models for regime detection
-- **statsmodels**: Statistical analysis
-- **PostgreSQL clients**: Database connectivity
-- **TimescaleDB clients**: Time-series database
-- **Redis clients**: Caching
-- **prometheus-client**: Monitoring metrics
-
-### IDE Configuration
-
-#### VS Code Settings (Recommended)
-```json
-{
-    "python.interpreterPath": "C:\\Users\\dongd\\anaconda3\\envs\\autotrading\\python.exe",
-    "python.testing.pytestEnabled": true,
-    "python.testing.pytestArgs": ["tests"],
-    "python.linting.enabled": true,
-    "python.formatting.provider": "black"
-}
-```
-
-#### PyCharm Settings (Alternative)
-- **Interpreter**: `C:\Users\dongd\anaconda3\envs\autotrading\python.exe`
-- **Test Runner**: pytest
-- **Source Root**: `src/`
-
-### Troubleshooting Guide
-
-#### Common Issues & Solutions
-
-**Issue 1: "python not recognized" or wrong Python version**
-```bash
-# Problem: System uses Python 3.13 instead of 3.10.18
-# Solution: Always use full path
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" --version
-# Should output: Python 3.10.18
-```
-
-**Issue 2: Import errors or package not found**
-```bash
-# Problem: Package installed in wrong environment
-# Solution: Install with direct pip path
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package_name
-
-# Verify installation
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -c "import package_name; print('OK')"
-```
-
-**Issue 3: Tests not running or failing unexpectedly**
-```bash
-# Check if using correct Python
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest --version
-
-# Verify test discovery
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest --collect-only tests/
-
-# Run with verbose output
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v --tb=short
-```
-
-#### Environment Verification Script
-```bash
-# Quick environment check
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -c "
-import sys
-print(f'Python version: {sys.version}')
-print(f'Python path: {sys.executable}')
-
-try:
-    import numpy, pandas, scipy
-    print('✅ Core scientific packages: OK')
-except ImportError as e:
-    print(f'❌ Import error: {e}')
-
-try:
-    import ccxt, aiohttp, pydantic
-    print('✅ Trading packages: OK')
-except ImportError as e:
-    print(f'❌ Import error: {e}')
-"
-```
-
-### Environment Status Summary
-
-#### ✅ Working & Verified
-- Python 3.10.18 environment fully configured
-- All core dependencies installed and tested
-- Direct path execution method established and verified
-- Testing framework operational (222 tests passing)
-- Core trading system modules importable
-- Database migration system ready
-
-#### ⚠️ Known Limitations
-- conda activate commands don't work (use direct paths)
-- Some advanced packages (arch, hmmlearn) not yet installed
-- IDE integration requires manual interpreter configuration
-
-#### 🚀 Ready For
-- Phase 4.1: Order Execution Engine development
-- All TDD workflows and testing
-- Production deployment preparation
-- Additional package installations as needed
 
 ## 📊 Next Development Steps
 
