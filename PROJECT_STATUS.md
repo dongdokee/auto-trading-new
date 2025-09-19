@@ -7,7 +7,7 @@
 **Last Updated**: 2025-09-19 (Refactored: Removed duplicated tech/environment content)
 
 **Overall Progress**: 70% ████████████████████████████████████████████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (Phase 1-3.3 Complete)
-**Current Phase**: Phase 4.1 - Order Execution Engine (Ready to start)
+**Current Phase**: Phase 4.1 - Order Execution Engine (**상세 구현 계획 완료**, 즉시 시작 가능)
 **Development Methodology**: TDD (Test-Driven Development)
 **Quality Metric**: 222 tests passing (100%)
 
@@ -99,10 +99,212 @@
 ### Phase 4: 실행 엔진 🚀 **진행 예정** (2주)
 **목표**: 실제 거래 실행을 위한 주문 관리 및 API 연동
 
-#### 4.1 주문 관리 시스템 (5일)
-- **스마트 주문 라우터**: 주문 크기 분할, 시장 충격 최소화
-- **실행 알고리즘**: TWAP, VWAP, Adaptive 실행
-- **슬리피지 컨트롤러**: 실시간 슬리피지 추정, 동적 조정
+#### 4.1 주문 관리 시스템 (5일) - **상세 구현 계획**
+**총 목표**: 시장 충격 최소화, 슬리피지 제어, 고성능 주문 처리 시스템 구축
+
+##### 📋 모듈 구조 설계
+```
+src/execution/
+├── __init__.py
+├── order_router.py          # SmartOrderRouter 클래스
+├── execution_algorithms.py  # TWAP, VWAP, Adaptive 알고리즘
+├── order_manager.py         # OrderManager 클래스
+├── slippage_controller.py   # SlippageController 클래스
+├── market_analyzer.py       # MarketConditionAnalyzer 클래스
+└── models.py               # Order, ExecutionResult 데이터 클래스
+
+tests/unit/test_execution/
+├── __init__.py
+├── test_order_router.py     # 45개 테스트 예상
+├── test_execution_algorithms.py # 35개 테스트 예상
+├── test_order_manager.py    # 25개 테스트 예상
+├── test_slippage_controller.py # 20개 테스트 예상
+└── test_market_analyzer.py # 15개 테스트 예상
+
+tests/integration/
+└── test_execution_integration.py # 15개 통합 테스트
+```
+
+##### 🎯 5일 상세 구현 로드맵
+
+**Day 1: 핵심 데이터 모델 및 마켓 분석 (TDD)**
+- **우선순위 1**: Order, ExecutionResult 데이터 클래스 (2시간)
+  - 실패 테스트: Order 검증, 필수 필드 체크
+  - 최소 구현: @dataclass 기본 구조
+  - 리팩터링: 검증 로직 추가
+
+- **우선순위 2**: MarketConditionAnalyzer 클래스 (4시간)
+  - 실패 테스트: 스프레드 계산, 유동성 점수, 주문북 불균형
+  - 최소 구현: 기본 계산 메서드들
+  - 리팩터링: 성능 최적화
+
+- **우선순위 3**: 통합 기반 준비 (2시간)
+  - Mock 데이터 준비
+  - 테스트 피처 설정
+  - 기존 모듈 연동 인터페이스 정의
+
+**Day 2: SmartOrderRouter 핵심 구현 (TDD)**
+- **우선순위 1**: 기본 라우팅 로직 (3시간)
+  - 실패 테스트: 전략 선택 로직 (긴급도별, 크기별)
+  - 최소 구현: _select_execution_strategy 메서드
+  - 리팩터링: 의사결정 트리 최적화
+
+- **우선순위 2**: AGGRESSIVE 실행 전략 (2시간)
+  - 실패 테스트: IOC 주문, 즉시 체결
+  - 최소 구현: execute_aggressive 메서드
+  - 리팩터링: 에러 핸들링 강화
+
+- **우선순위 3**: PASSIVE 실행 전략 (3시간)
+  - 실패 테스트: Post-Only 주문, 미체결 처리
+  - 최소 구현: execute_passive 메서드
+  - 리팩터링: 타임아웃 로직 추가
+
+**Day 3: 고급 실행 알고리즘 (TDD)**
+- **우선순위 1**: TWAP 알고리즘 (4시간)
+  - 실패 테스트: 최적 지속시간 계산, 슬라이스 분할
+  - 최소 구현: execute_twap, Almgren-Chriss 모델
+  - 리팩터링: 동적 조정 로직
+
+- **우선순위 2**: VWAP 알고리즘 (2시간)
+  - 실패 테스트: 볼륨 가중 실행
+  - 최소 구현: execute_vwap 메서드
+  - 리팩터링: 볼륨 예측 개선
+
+- **우선순위 3**: Adaptive 실행 (2시간)
+  - 실패 테스트: 시장 조건 기반 동적 조정
+  - 최소 구현: execute_adaptive 메서드
+  - 리팩터링: 피드백 루프 최적화
+
+**Day 4: 주문 관리 및 슬리피지 제어 (TDD)**
+- **우선순위 1**: OrderManager 클래스 (3시간)
+  - 실패 테스트: 주문 생명주기, 상태 관리
+  - 최소 구현: submit_order, cancel_order, update_status
+  - 리팩터링: 동시성 안전성 보장
+
+- **우선순위 2**: SlippageController (3시간)
+  - 실패 테스트: 슬리피지 계산, 예측 모델
+  - 최소 구현: calculate_slippage, predict_slippage
+  - 리팩터링: 적응형 임계값 로직
+
+- **우선순위 3**: 성능 최적화 (2시간)
+  - 병목 지점 식별
+  - 메모리 사용량 최적화
+  - 비동기 처리 개선
+
+**Day 5: 통합 테스트 및 문서화 (TDD)**
+- **우선순위 1**: 전체 시스템 통합 테스트 (3시간)
+  - 실패 테스트: 전체 주문 워크플로
+  - 최소 구현: 통합 테스트 통과
+  - 리팩터링: 최종 성능 튜닝
+
+- **우선순위 2**: 기존 모듈 연동 (3시간)
+  - RiskController 연동
+  - StrategyManager 연동
+  - PortfolioOptimizer 연동
+
+- **우선순위 3**: 문서화 및 검증 (2시간)
+  - CLAUDE.md 작성
+  - API 문서 생성
+  - 성능 벤치마크 실행
+
+##### 🎯 TDD 테스트 시나리오 설계
+
+**핵심 테스트 영역** (총 155개 예상):
+
+1. **SmartOrderRouter (45개 테스트)**
+   - 전략 선택 로직: 긴급도/크기/시장조건별 (15개)
+   - 각 실행 전략 검증: AGGRESSIVE/PASSIVE/TWAP/ADAPTIVE (20개)
+   - 결과 집계 및 오류 처리 (10개)
+
+2. **ExecutionAlgorithms (35개 테스트)**
+   - TWAP: 최적시간 계산, 슬라이스 분할 (12개)
+   - VWAP: 볼륨 가중 실행 (8개)
+   - Adaptive: 동적 조정 로직 (15개)
+
+3. **OrderManager (25개 테스트)**
+   - 주문 생명주기 관리 (10개)
+   - 상태 업데이트 및 취소 (8개)
+   - 만료 주문 처리 (7개)
+
+4. **SlippageController (20개 테스트)**
+   - 슬리피지 계산 정확성 (8개)
+   - 예측 모델 검증 (7개)
+   - 적응형 임계값 (5개)
+
+5. **MarketAnalyzer (15개 테스트)**
+   - 시장 조건 분석 (8개)
+   - 유동성 평가 (4개)
+   - 스프레드 계산 (3개)
+
+6. **통합 테스트 (15개)**
+   - 전체 주문 플로우 (8개)
+   - 기존 모듈 연동 (4개)
+   - 성능 벤치마크 (3개)
+
+##### 🔗 기존 모듈 연동 인터페이스
+
+**RiskController 연동**:
+```python
+# 포지션 사이즈 검증
+max_position_size = risk_controller.get_max_position_size(symbol, side)
+order.size = min(order.size, max_position_size)
+
+# 실시간 리스크 체크
+if not risk_controller.can_execute_order(order):
+    return {"status": "REJECTED", "reason": "RISK_LIMIT"}
+```
+
+**StrategyManager 연동**:
+```python
+# 전략 신호를 주문으로 변환
+strategy_signals = strategy_manager.get_current_signals()
+orders = [convert_signal_to_order(signal) for signal in strategy_signals]
+```
+
+**PortfolioOptimizer 연동**:
+```python
+# 포트폴리오 최적화 결과 적용
+optimal_weights = portfolio_optimizer.get_target_weights()
+rebalance_orders = generate_rebalance_orders(optimal_weights)
+```
+
+##### 📊 성능 요구사항 및 KPI
+
+**처리 성능**:
+- 주문 라우팅 결정: <10ms
+- 단일 주문 실행: <50ms
+- TWAP 슬라이스 간격: 1-60초 (설정 가능)
+- 동시 주문 처리: 최대 100개
+
+**정확성 요구사항**:
+- 슬리피지 예측 오차: <20%
+- 실행 가격 편차: <5bps
+- 주문 취소 성공률: >99%
+
+**시스템 안정성**:
+- 메모리 사용량: <100MB
+- CPU 사용률: <10% (평상시)
+- 장애 복구 시간: <5초
+
+##### 🎯 Phase 4.1 완료 기준
+
+**기능 완성도**:
+- [ ] 4가지 실행 전략 완전 구현 (AGGRESSIVE/PASSIVE/TWAP/ADAPTIVE)
+- [ ] 실시간 슬리피지 모니터링 및 제어
+- [ ] 주문 생명주기 완전 관리
+- [ ] 기존 모듈과 완전 통합
+
+**품질 지표**:
+- [ ] 155개 테스트 100% 통과
+- [ ] 코드 커버리지 >95%
+- [ ] 모든 성능 KPI 달성
+- [ ] 문서화 100% 완성
+
+**검증 시나리오**:
+- [ ] 모든 실행 전략으로 모의 거래 성공
+- [ ] 대량 주문 분할 실행 검증
+- [ ] 슬리피지 제어 효과 확인
+- [ ] 기존 백테스팅 시스템과 통합 테스트
 
 #### 4.2 API 연동 (5일)
 - **Binance Futures API 클라이언트**: RESTful API, 인증 처리
@@ -198,32 +400,25 @@
 
 ### 🎯 Phase 4.1: 주문 실행 엔진 (즉시 시작 가능)
 
-#### 우선순위 1: 스마트 주문 라우터 (2일)
-**목표**: 시장 충격을 최소화하면서 대량 주문을 효율적으로 처리
+#### 📋 **완전한 구현 계획 업데이트 완료**
+**상위 섹션에서 확인**: 5일 상세 로드맵, TDD 테스트 시나리오, 155개 테스트 계획
 
-**구현 작업**:
-- [ ] 주문 크기 분할 알고리즘 구현
-- [ ] 유동성 고려 실행 로직
-- [ ] 시장 충격 최소화 전략
-- [ ] 주문 라우터 테스트 스위트 (예상 15개 테스트)
+#### 🚀 **즉시 시작 가능한 첫 번째 작업**
 
-#### 우선순위 2: 실행 알고리즘 (2일)
-**목표**: TWAP, VWAP, Adaptive 실행 알고리즘 구현
+**1단계**: TDD 방식으로 핵심 데이터 모델 구현 시작
+- `src/execution/models.py` - Order 및 ExecutionResult 데이터 클래스
+- `tests/unit/test_execution/test_models.py` - 첫 번째 실패 테스트 작성
+- Red-Green-Refactor 사이클 시작
 
-**구현 작업**:
-- [ ] TWAP (Time-Weighted Average Price) 알고리즘
-- [ ] VWAP (Volume-Weighted Average Price) 알고리즘
-- [ ] Adaptive 실행 (시장 상황 기반 동적 조정)
-- [ ] 실행 알고리즘 테스트 스위트 (예상 20개 테스트)
+**2단계**: MarketConditionAnalyzer 구현
+- 시장 분석 기반 클래스 구현
+- 스프레드, 유동성, 주문북 불균형 계산
+- 15개 예상 테스트와 함께 TDD 구현
 
-#### 우선순위 3: 슬리피지 컨트롤러 (1일)
-**목표**: 실시간 슬리피지 추정 및 주문 크기 동적 조정
-
-**구현 작업**:
-- [ ] 실시간 슬리피지 추정 모델
-- [ ] 주문 크기 동적 조정 로직
-- [ ] 취소/수정 로직 구현
-- [ ] 슬리피지 컨트롤러 테스트 스위트 (예상 10개 테스트)
+**3단계**: SmartOrderRouter 기본 구조
+- 전략 선택 로직 구현
+- 4가지 실행 전략 기반 구조
+- 45개 예상 테스트로 완전 검증
 
 ### 🎯 Phase 4.2: API 연동 (Phase 4.1 완료 후)
 
@@ -249,11 +444,20 @@
 - [ ] 에러 핸들링 테스트 스위트 (예상 8개 테스트)
 
 ### 📋 Phase 4 완료 기준
+
+#### Phase 4.1 완료 기준 (상세)
+- [ ] 155개 새로운 테스트 100% 통과 (45+35+25+20+15+15)
+- [ ] 4가지 실행 전략 완전 구현 (AGGRESSIVE/PASSIVE/TWAP/ADAPTIVE)
+- [ ] 슬리피지 예측 오차 <20%, 실행 가격 편차 <5bps
+- [ ] 주문 라우팅 결정 <10ms, 단일 주문 실행 <50ms
+- [ ] 기존 모듈 완전 통합 (RiskController, StrategyManager, PortfolioOptimizer)
+
+#### Phase 4.2 완료 기준
 - [ ] Paper trading 환경에서 오류 없는 주문 실행
 - [ ] 실시간 데이터 연결 안정성 > 99.9%
 - [ ] API 에러 복구 시간 < 5초
 - [ ] 전체 주문 실행 지연시간 < 100ms
-- [ ] 80개 이상 새로운 테스트 100% 통과
+- [ ] Binance Futures API 완전 통합
 
 ### 🎯 즉시 시작할 수 있는 첫 번째 작업
 
