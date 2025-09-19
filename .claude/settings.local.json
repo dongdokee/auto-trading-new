@@ -5,7 +5,20 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_market_analyzer.py -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_market_analyzer.py::TestMarketConditionAnalyzer::test_should_calculate_basic_spread_metrics_correctly -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/integration/test_execution_integration.py -v)",
-      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/ tests/integration/test_execution_integration.py -v)"
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/ tests/integration/test_execution_integration.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_order_router.py::TestSmartOrderRouter::test_should_initialize_with_execution_strategies -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_order_router.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_order_router.py::TestSmartOrderRouter::test_should_route_order_through_complete_workflow -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_execute_twap_with_optimal_duration_calculation -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_execute_vwap_following_volume_profile -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_implement_adaptive_execution_with_multiple_signals -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_execution_algorithms.py -v --tb=short)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_validate_algorithm_parameters -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/ tests/integration/test_execution_integration.py --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_models.py tests/unit/test_execution/test_market_analyzer.py tests/unit/test_execution/test_order_router.py --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_order_manager.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_slippage_controller.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/test_models.py tests/unit/test_execution/test_order_manager.py tests/unit/test_execution/test_slippage_controller.py --tb=no -q)"
     ],
     "deny": [],
     "ask": []

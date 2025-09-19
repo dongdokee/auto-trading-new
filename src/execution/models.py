@@ -44,6 +44,8 @@ class Order:
     def __post_init__(self):
         """생성 후 검증"""
         # Symbol validation
+        if not self.symbol:
+            raise ValueError("Symbol cannot be empty")
         if not self.symbol.isupper():
             raise ValueError("Symbol must be uppercase")
 

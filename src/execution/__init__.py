@@ -13,6 +13,10 @@ from .models import (
     OrderStatus
 )
 from .market_analyzer import MarketConditionAnalyzer
+from .order_router import SmartOrderRouter
+from .execution_algorithms import ExecutionAlgorithms
+from .order_manager import OrderManager, OrderInfo
+from .slippage_controller import SlippageController, SlippageMetrics, SlippageAlert
 
 __all__ = [
     "Order",
@@ -20,5 +24,12 @@ __all__ = [
     "OrderSide",
     "OrderUrgency",
     "OrderStatus",
-    "MarketConditionAnalyzer"
+    "MarketConditionAnalyzer",
+    "SmartOrderRouter",
+    "ExecutionAlgorithms",
+    "OrderManager",
+    "OrderInfo",
+    "SlippageController",
+    "SlippageMetrics",
+    "SlippageAlert"
 ]
