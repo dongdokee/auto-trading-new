@@ -31,6 +31,7 @@ class ExchangeConfig(BaseModel):
     api_secret: str = Field(..., description="API secret")
     passphrase: Optional[str] = Field(default=None, description="API passphrase (required for some exchanges)")
     testnet: bool = Field(default=True, description="Use testnet/sandbox")
+    paper_trading: bool = Field(default=True, description="Enable paper trading mode")
     rate_limit_requests: int = Field(default=1200, ge=1, description="Rate limit requests per window")
     rate_limit_window: int = Field(default=60, ge=1, description="Rate limit window in seconds")
     timeout: int = Field(default=30, ge=1, le=300, description="Request timeout in seconds")
