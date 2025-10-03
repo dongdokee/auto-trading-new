@@ -453,7 +453,7 @@ class TestMachineLearningAnalyzer:
         """Test that MachineLearningAnalyzer requires scikit-learn."""
         features, targets = sample_ml_data
 
-        with patch('src.optimization.analytics_system.LinearRegression', None):
+        with patch('src.optimization.analytics.ml_analyzer.LinearRegression', None):
             with pytest.raises(AnalyticsError, match="scikit-learn is required"):
                 ml_analyzer.analyze(features, targets)
 
@@ -552,19 +552,19 @@ class TestAdvancedAnalyticsSystem:
         targets = [3.0, 6.0, 9.0, 12.0, 15.0]
 
         # Mock sklearn to avoid dependency
-        with patch('src.optimization.analytics_system.LinearRegression') as mock_lr:
+        with patch('src.optimization.analytics.ml_analyzer.LinearRegression') as mock_lr:
             mock_model = Mock()
             mock_model.fit.return_value = None
             mock_model.predict.return_value = np.array([3.0, 6.0])
             mock_lr.return_value = mock_model
 
-            with patch('src.optimization.analytics_system.train_test_split') as mock_split:
+            with patch('src.optimization.analytics.ml_analyzer.train_test_split') as mock_split:
                 mock_split.return_value = (features[:3], features[3:], targets[:3], targets[3:])
 
-                with patch('src.optimization.analytics_system.mean_squared_error', return_value=0.1), \
-                     patch('src.optimization.analytics_system.mean_absolute_error', return_value=0.2), \
-                     patch('src.optimization.analytics_system.r2_score', return_value=0.9), \
-                     patch('src.optimization.analytics_system.StandardScaler') as mock_scaler:
+                with patch('src.optimization.analytics.ml_analyzer.mean_squared_error', return_value=0.1), \
+                     patch('src.optimization.analytics.ml_analyzer.mean_absolute_error', return_value=0.2), \
+                     patch('src.optimization.analytics.ml_analyzer.r2_score', return_value=0.9), \
+                     patch('src.optimization.analytics.ml_analyzer.StandardScaler') as mock_scaler:
 
                     mock_scaler_instance = Mock()
                     mock_scaler_instance.fit_transform.return_value = np.array(features)
@@ -632,7 +632,7 @@ class TestAdvancedAnalyticsSystem:
         analytics_system = AdvancedAnalyticsSystem()
 
         # Simulate error during initialization
-        with patch('src.optimization.analytics_system.logger.info', side_effect=Exception("Test error")):
+        with patch('src.optimization.analytics.system.logger.info', side_effect=Exception("Test error")):
             with pytest.raises(AnalyticsError, match="Failed to initialize analytics system"):
                 await analytics_system.initialize()
 

@@ -106,7 +106,12 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_deployment_tools.py::TestRollingDeploymentStrategy::test_should_generate_unique_deployment_id -v)",
       "Bash(for:*)",
       "Bash(done)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/ --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.analytics import AdvancedAnalyticsSystem; print(''Analytics module import successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_run_ml_analysis -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_handle_initialization_errors -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_run_ml_analysis tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_handle_initialization_errors --tb=no -q)"
     ],
     "deny": [],
     "ask": []
