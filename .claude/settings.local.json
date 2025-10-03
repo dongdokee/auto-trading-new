@@ -117,7 +117,12 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_db_optimizer.py::TestQueryOptimizer::test_should_handle_query_timeouts tests/unit/test_optimization/test_db_optimizer.py::TestQueryOptimizer::test_should_provide_query_rewrite_suggestions -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_db_optimizer.py::TestConnectionPoolManager::test_should_provide_query_rewrite_suggestions -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_db_optimizer.py::TestQueryOptimizer::test_should_provide_query_rewrite_suggestions -v)",
-      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.deployment_tools import ProductionDeploymentTools; print(''Deployment module import successful'')\")"
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.deployment_tools import ProductionDeploymentTools; print(''Deployment module import successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.cache_manager import CacheManager; print(''Cache module import successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.performance_enhancer import PerformanceEnhancer; print(''Performance module import successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_portfolio/test_adaptive_allocator.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_portfolio/test_adaptive_allocator.py --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_portfolio/ tests/integration/test_portfolio_optimization_integration.py --tb=no -q)"
     ],
     "deny": [],
     "ask": []
