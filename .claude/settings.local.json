@@ -122,7 +122,13 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.performance_enhancer import PerformanceEnhancer; print(''Performance module import successful'')\")",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_portfolio/test_adaptive_allocator.py -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_portfolio/test_adaptive_allocator.py --tb=no -q)",
-      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_portfolio/ tests/integration/test_portfolio_optimization_integration.py --tb=no -q)"
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_portfolio/ tests/integration/test_portfolio_optimization_integration.py --tb=no -q)",
+      "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py -v)",
+      "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py --tb=no -q)",
+      "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -c \"from src.execution.execution_algorithms import ExecutionAlgorithms; print(''Import successful'')\")",
+      "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_execute_twap_with_optimal_duration_calculation -v)",
+      "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_execute_vwap_following_volume_profile -v)",
+      "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_implement_adaptive_execution_with_multiple_signals -v)"
     ],
     "deny": [],
     "ask": []
