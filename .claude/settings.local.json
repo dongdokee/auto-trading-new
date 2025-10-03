@@ -111,7 +111,13 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.analytics import AdvancedAnalyticsSystem; print(''Analytics module import successful'')\")",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_run_ml_analysis -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_handle_initialization_errors -v)",
-      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_run_ml_analysis tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_handle_initialization_errors --tb=no -q)"
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_run_ml_analysis tests/unit/test_optimization/test_analytics_system.py::TestAdvancedAnalyticsSystem::test_should_handle_initialization_errors --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.database import DatabaseOptimizer; print(''Database module import successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_db_optimizer.py::TestQueryOptimizer::test_should_get_optimization_statistics -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_db_optimizer.py::TestQueryOptimizer::test_should_handle_query_timeouts tests/unit/test_optimization/test_db_optimizer.py::TestQueryOptimizer::test_should_provide_query_rewrite_suggestions -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_db_optimizer.py::TestConnectionPoolManager::test_should_provide_query_rewrite_suggestions -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_db_optimizer.py::TestQueryOptimizer::test_should_provide_query_rewrite_suggestions -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.deployment_tools import ProductionDeploymentTools; print(''Deployment module import successful'')\")"
     ],
     "deny": [],
     "ask": []
