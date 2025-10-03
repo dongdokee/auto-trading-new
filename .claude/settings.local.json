@@ -103,7 +103,10 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_deployment_tools.py::TestDeploymentResult::test_should_complete_deployment_successfully tests/unit/test_optimization/test_deployment_tools.py::TestContainerManager::test_should_handle_push_without_image tests/unit/test_optimization/test_deployment_tools.py::TestBackupManager::test_should_handle_restore_nonexistent_backup -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_deployment_tools.py::TestProductionDeploymentTools::test_should_deploy_service -v)",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_deployment_tools.py --tb=no -q)",
-      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_deployment_tools.py::TestRollingDeploymentStrategy::test_should_generate_unique_deployment_id -v)"
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_deployment_tools.py::TestRollingDeploymentStrategy::test_should_generate_unique_deployment_id -v)",
+      "Bash(for:*)",
+      "Bash(done)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
