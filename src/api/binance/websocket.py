@@ -2,6 +2,7 @@
 import asyncio
 import json
 import logging
+import time
 from typing import Dict, Any, Callable, Optional
 from decimal import Decimal
 
@@ -9,7 +10,15 @@ import websockets
 from websockets.exceptions import ConnectionClosed, InvalidURI
 
 from src.api.base import ExchangeConfig
+from src.core.patterns import LoggerFactory
 from .exceptions import BinanceConnectionError
+
+# Import enhanced logging if available
+try:
+    from src.utils.trading_logger import TradingMode, LogCategory
+    ENHANCED_LOGGING_AVAILABLE = True
+except ImportError:
+    ENHANCED_LOGGING_AVAILABLE = False
 
 
 class BinanceWebSocket:
@@ -37,12 +46,24 @@ class BinanceWebSocket:
         self._listen_task: Optional[asyncio.Task] = None
         self._ping_task: Optional[asyncio.Task] = None
 
-        # Logger
-        self.logger = logging.getLogger(__name__)
+        # Enhanced logging setup
+        self._setup_enhanced_logging()
+
+        # Trading session tracking
+        self.current_session_id = None
+        self.current_correlation_id = None
+
+        # Performance metrics
+        self._message_count = 0
+        self._connection_start_time = None
+        self._last_message_time = None
 
     async def connect(self) -> None:
         """Establish WebSocket connection"""
         try:
+            self._connection_start_time = time.time()
+            self.log_connection_event("connecting", url=f"{self.base_ws_url}/ws")
+
             self.websocket = await websockets.connect(f"{self.base_ws_url}/ws")
             self._connected = True
 
@@ -50,9 +71,11 @@ class BinanceWebSocket:
             self._listen_task = asyncio.create_task(self._listen_loop())
             self._ping_task = asyncio.create_task(self._ping_loop())
 
-            self.logger.info("WebSocket connected successfully")
+            connection_time = time.time() - self._connection_start_time
+            self.log_connection_event("connected", connection_time_ms=connection_time * 1000)
 
         except (ConnectionClosed, InvalidURI, OSError) as e:
+            self.log_websocket_error("connection_failed", e)
             raise BinanceConnectionError(f"Failed to connect WebSocket: {e}")
 
     async def disconnect(self) -> None:
@@ -73,7 +96,52 @@ class BinanceWebSocket:
         # Clear subscriptions
         self.subscriptions.clear()
 
-        self.logger.info("WebSocket disconnected")
+        self.log_connection_event("disconnected")
+
+    def set_trading_session(self, session_id: str, correlation_id: str = None):
+        """Set trading session context for logging"""
+        self.current_session_id = session_id
+        self.current_correlation_id = correlation_id
+
+        # Update logger context if enhanced logging is available
+        if hasattr(self.logger, 'base_logger') and hasattr(self.logger.base_logger, 'set_context'):
+            self.logger.base_logger.set_context(
+                session_id=session_id,
+                correlation_id=correlation_id,
+                component="websocket_integration"
+            )
+
+    def _setup_enhanced_logging(self):
+        """Setup enhanced logging for WebSocket client"""
+        if ENHANCED_LOGGING_AVAILABLE:
+            # Use enhanced logger factory for WebSocket integration
+            self.logger = LoggerFactory.get_component_trading_logger(
+                component="websocket_integration",
+                strategy="binance_websocket"
+            )
+        else:
+            # Fallback to standard logging
+            self.logger = LoggerFactory.get_api_logger("binance_websocket")
+
+        # Setup logging methods
+        self._setup_logging_methods()
+
+    def _setup_logging_methods(self):
+        """Setup enhanced logging methods"""
+        if hasattr(self.logger, 'log_connection'):
+            # Enhanced logger available
+            self.log_connection_event = self._enhanced_log_connection_event
+            self.log_subscription_event = self._enhanced_log_subscription_event
+            self.log_stream_data = self._enhanced_log_stream_data
+            self.log_websocket_error = self._enhanced_log_websocket_error
+            self.log_performance_metrics = self._enhanced_log_performance_metrics
+        else:
+            # Standard logger - use basic methods
+            self.log_connection_event = self._basic_log_connection_event
+            self.log_subscription_event = self._basic_log_subscription_event
+            self.log_stream_data = self._basic_log_stream_data
+            self.log_websocket_error = self._basic_log_websocket_error
+            self.log_performance_metrics = self._basic_log_performance_metrics
 
     def is_connected(self) -> bool:
         """Check if WebSocket is connected"""
@@ -85,6 +153,7 @@ class BinanceWebSocket:
             raise BinanceConnectionError("WebSocket not connected")
 
         stream_name = self._get_orderbook_stream(symbol)
+        self.log_subscription_event("subscribing", stream_name, "orderbook", symbol)
         await self._subscribe_to_stream(stream_name, callback)
 
     async def subscribe_trades(self, symbol: str, callback: Callable) -> None:
@@ -93,6 +162,7 @@ class BinanceWebSocket:
             raise BinanceConnectionError("WebSocket not connected")
 
         stream_name = self._get_trade_stream(symbol)
+        self.log_subscription_event("subscribing", stream_name, "trades", symbol)
         await self._subscribe_to_stream(stream_name, callback)
 
     async def subscribe_markprice(self, symbol: str, callback: Callable) -> None:
@@ -101,6 +171,7 @@ class BinanceWebSocket:
             raise BinanceConnectionError("WebSocket not connected")
 
         stream_name = self._get_markprice_stream(symbol)
+        self.log_subscription_event("subscribing", stream_name, "markprice", symbol)
         await self._subscribe_to_stream(stream_name, callback)
 
     async def unsubscribe(self, stream_name: str) -> None:
@@ -119,8 +190,9 @@ class BinanceWebSocket:
             try:
                 await self.websocket.send(json.dumps(subscription_message))
                 del self.subscriptions[stream_name]
-                self.logger.info(f"Unsubscribed from {stream_name}")
+                self.log_subscription_event("unsubscribed", stream_name)
             except ConnectionClosed as e:
+                self.log_websocket_error("unsubscribe_failed", e, stream_name=stream_name)
                 raise BinanceConnectionError(f"Failed to unsubscribe: {e}")
 
     # Private helper methods
@@ -137,8 +209,9 @@ class BinanceWebSocket:
         try:
             await self.websocket.send(json.dumps(subscription_message))
             self.subscriptions[stream_name] = callback
-            self.logger.info(f"Subscribed to {stream_name}")
+            self.log_subscription_event("subscribed", stream_name)
         except ConnectionClosed as e:
+            self.log_websocket_error("subscribe_failed", e, stream_name=stream_name)
             raise BinanceConnectionError(f"Failed to subscribe to {stream_name}: {e}")
 
     async def _listen_loop(self) -> None:
@@ -146,14 +219,16 @@ class BinanceWebSocket:
         while self._connected:
             try:
                 message = await self.websocket.recv()
+                self._message_count += 1
+                self._last_message_time = time.time()
                 await self._process_message(message)
             except ConnectionClosed:
-                self.logger.warning("WebSocket connection closed")
+                self.log_connection_event("connection_lost")
                 if self._auto_reconnect:
                     await self._handle_connection_loss()
                 break
             except Exception as e:
-                self.logger.error(f"Error in listen loop: {e}")
+                self.log_websocket_error("listen_loop_error", e)
 
     async def _process_message(self, message: str) -> None:
         """Process incoming WebSocket message"""
@@ -162,7 +237,7 @@ class BinanceWebSocket:
 
             # Handle subscription confirmations
             if "result" in data and "id" in data:
-                self.logger.debug(f"Subscription confirmation: {data}")
+                self.log_subscription_event("confirmation_received", result=data.get("result"))
                 return
 
             # Handle stream data
@@ -173,12 +248,18 @@ class BinanceWebSocket:
                 if stream_name in self.subscriptions:
                     callback = self.subscriptions[stream_name]
                     processed_data = self._process_stream_data(stream_name, stream_data)
+
+                    # Log stream data
+                    symbol = processed_data.get("symbol", "unknown")
+                    data_type = self._get_data_type_from_stream(stream_name)
+                    self.log_stream_data(symbol, data_type, processed_data)
+
                     await callback(processed_data)
 
         except json.JSONDecodeError:
-            self.logger.warning(f"Invalid JSON message: {message}")
+            self.log_websocket_error("invalid_json", None, message=message[:100])
         except Exception as e:
-            self.logger.error(f"Error processing message: {e}")
+            self.log_websocket_error("message_processing_error", e, message=message[:100])
 
     def _process_stream_data(self, stream_name: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Process stream data based on stream type"""
@@ -236,7 +317,7 @@ class BinanceWebSocket:
                 if self.is_connected():
                     await self._send_ping()
             except Exception as e:
-                self.logger.error(f"Error in ping loop: {e}")
+                self.log_websocket_error("ping_loop_error", e)
 
     async def _send_ping(self) -> None:
         """Send ping message"""
@@ -244,11 +325,11 @@ class BinanceWebSocket:
             try:
                 await self.websocket.ping()
             except ConnectionClosed:
-                self.logger.warning("Failed to send ping - connection closed")
+                self.log_connection_event("ping_failed")
 
     async def _handle_connection_loss(self) -> None:
         """Handle connection loss and attempt reconnection"""
-        self.logger.info("Attempting to reconnect WebSocket...")
+        self.log_connection_event("reconnecting", delay_seconds=self._reconnect_delay)
 
         # Wait before reconnecting
         await asyncio.sleep(self._reconnect_delay)
@@ -269,10 +350,10 @@ class BinanceWebSocket:
                 for stream, callback in callbacks.items():
                     await self._subscribe_to_stream(stream, callback)
 
-                self.logger.info("Reconnected and resubscribed to all streams")
+                self.log_connection_event("reconnected_and_resubscribed", stream_count=len(callbacks))
 
         except Exception as e:
-            self.logger.error(f"Reconnection failed: {e}")
+            self.log_websocket_error("reconnection_failed", e)
             # Exponential backoff for next attempt
             self._reconnect_delay = min(self._reconnect_delay * 2, 60)
 
@@ -287,3 +368,196 @@ class BinanceWebSocket:
     def _get_markprice_stream(self, symbol: str) -> str:
         """Get mark price stream name"""
         return f"{symbol.lower()}@markPrice@1s"
+
+    def _get_data_type_from_stream(self, stream_name: str) -> str:
+        """Get data type from stream name"""
+        if "@depth" in stream_name:
+            return "orderbook"
+        elif "@aggTrade" in stream_name:
+            return "trades"
+        elif "@markPrice" in stream_name:
+            return "markprice"
+        else:
+            return "unknown"
+
+    # Enhanced Logging Methods
+
+    def _enhanced_log_connection_event(self, event: str, **context):
+        """Log connection event using enhanced logger"""
+        try:
+            self.logger.log_connection(
+                message=f"WebSocket {event}",
+                event_type=event,
+                exchange="binance",
+                testnet=self.config.testnet,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced connection logging failed: {e}")
+            self._basic_log_connection_event(event, **context)
+
+    def _basic_log_connection_event(self, event: str, **context):
+        """Log connection event using basic logger"""
+        testnet_str = " [TESTNET]" if self.config.testnet else ""
+
+        self.logger.info(
+            f"[WebSocket] {event}{testnet_str}",
+            extra={
+                'connection_event': event,
+                'testnet': self.config.testnet,
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_subscription_event(self, action: str, stream_name: str = None, data_type: str = None, symbol: str = None, **context):
+        """Log subscription event using enhanced logger"""
+        try:
+            self.logger.log_subscription(
+                message=f"Stream {action}: {stream_name or 'unknown'}",
+                action=action,
+                stream_name=stream_name,
+                data_type=data_type,
+                symbol=symbol,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced subscription logging failed: {e}")
+            self._basic_log_subscription_event(action, stream_name, data_type, symbol, **context)
+
+    def _basic_log_subscription_event(self, action: str, stream_name: str = None, data_type: str = None, symbol: str = None, **context):
+        """Log subscription event using basic logger"""
+        stream_info = f" ({stream_name})" if stream_name else ""
+
+        self.logger.info(
+            f"[Subscription] {action}{stream_info}",
+            extra={
+                'subscription_action': action,
+                'stream_name': stream_name,
+                'data_type': data_type,
+                'symbol': symbol,
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_stream_data(self, symbol: str, data_type: str, data: dict, **context):
+        """Log stream data using enhanced logger"""
+        try:
+            self.logger.log_market_data(
+                message=f"Stream data: {symbol} {data_type}",
+                symbol=symbol,
+                data_type=data_type,
+                timestamp=data.get('event_time'),
+                price=data.get('price') or data.get('mark_price'),
+                quantity=data.get('quantity'),
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced stream data logging failed: {e}")
+            self._basic_log_stream_data(symbol, data_type, data, **context)
+
+    def _basic_log_stream_data(self, symbol: str, data_type: str, data: dict, **context):
+        """Log stream data using basic logger"""
+        price_str = ""
+        if data.get('price'):
+            price_str = f" @ {data.get('price')}"
+        elif data.get('mark_price'):
+            price_str = f" @ {data.get('mark_price')}"
+
+        self.logger.debug(
+            f"[StreamData] {symbol} {data_type}{price_str}",
+            extra={
+                'symbol': symbol,
+                'data_type': data_type,
+                'price': data.get('price') or data.get('mark_price'),
+                'quantity': data.get('quantity'),
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_websocket_error(self, error_type: str, error: Exception = None, **context):
+        """Log WebSocket error using enhanced logger"""
+        try:
+            error_message = str(error) if error else "Unknown error"
+            self.logger.log_websocket_error(
+                message=f"WebSocket error: {error_type} - {error_message}",
+                error_type=error_type,
+                error_message=error_message,
+                error_class=type(error).__name__ if error else "Unknown",
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced WebSocket error logging failed: {e}")
+            self._basic_log_websocket_error(error_type, error, **context)
+
+    def _basic_log_websocket_error(self, error_type: str, error: Exception = None, **context):
+        """Log WebSocket error using basic logger"""
+        error_message = str(error) if error else "Unknown error"
+
+        self.logger.error(
+            f"[WebSocket] {error_type}: {error_message}",
+            extra={
+                'error_type': error_type,
+                'error_message': error_message,
+                'error_class': type(error).__name__ if error else "Unknown",
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_performance_metrics(self, **metrics):
+        """Log performance metrics using enhanced logger"""
+        try:
+            uptime = time.time() - self._connection_start_time if self._connection_start_time else 0
+
+            self.logger.log_performance(
+                message="WebSocket performance metrics",
+                component="websocket",
+                uptime_seconds=uptime,
+                message_count=self._message_count,
+                active_subscriptions=len(self.subscriptions),
+                last_message_age=time.time() - self._last_message_time if self._last_message_time else None,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **metrics
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced performance logging failed: {e}")
+            self._basic_log_performance_metrics(**metrics)
+
+    def _basic_log_performance_metrics(self, **metrics):
+        """Log performance metrics using basic logger"""
+        uptime = time.time() - self._connection_start_time if self._connection_start_time else 0
+
+        self.logger.info(
+            f"[Performance] WebSocket uptime: {uptime:.1f}s, messages: {self._message_count}, subscriptions: {len(self.subscriptions)}",
+            extra={
+                'uptime_seconds': uptime,
+                'message_count': self._message_count,
+                'active_subscriptions': len(self.subscriptions),
+                'session_id': self.current_session_id,
+                **metrics
+            }
+        )
+
+    def get_performance_metrics(self) -> dict:
+        """Get current performance metrics"""
+        uptime = time.time() - self._connection_start_time if self._connection_start_time else 0
+        return {
+            'uptime_seconds': uptime,
+            'message_count': self._message_count,
+            'active_subscriptions': len(self.subscriptions),
+            'last_message_age': time.time() - self._last_message_time if self._last_message_time else None,
+            'reconnect_delay': self._reconnect_delay,
+            'is_connected': self.is_connected()
+        }

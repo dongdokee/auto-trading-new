@@ -8,14 +8,24 @@ from decimal import Decimal
 from typing import Dict, Any, List, Optional, Callable
 import asyncio
 import logging
+import time
+import uuid
 
 from src.execution.models import Order, OrderSide, OrderUrgency, ExecutionResult
 from src.execution.order_manager import OrderManager
 from src.execution.market_analyzer import MarketConditionAnalyzer
 from src.api.base import ExchangeConfig
+from src.core.patterns import LoggerFactory
 from .client import BinanceClient
 from .websocket import BinanceWebSocket
 from .exceptions import BinanceAPIError, BinanceOrderError
+
+# Import enhanced logging if available
+try:
+    from src.utils.trading_logger import TradingMode, LogCategory
+    ENHANCED_LOGGING_AVAILABLE = True
+except ImportError:
+    ENHANCED_LOGGING_AVAILABLE = False
 
 
 class BinanceExecutor:
@@ -43,8 +53,16 @@ class BinanceExecutor:
         self.orderbook_callbacks: Dict[str, List[Callable]] = {}
         self.trade_callbacks: Dict[str, List[Callable]] = {}
 
-        # Logger
-        self.logger = logging.getLogger(__name__)
+        # Enhanced logging setup
+        self._setup_enhanced_logging()
+
+        # Trading session tracking
+        self.current_session_id = None
+        self.current_correlation_id = None
+
+        # Performance metrics
+        self._execution_count = 0
+        self._start_time = time.time()
 
     async def connect(self) -> None:
         """Connect to Binance API and WebSocket streams"""

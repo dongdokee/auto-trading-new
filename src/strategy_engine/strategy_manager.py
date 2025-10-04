@@ -8,12 +8,21 @@ Manages the complete strategy execution pipeline from market data to final tradi
 from typing import Dict, List, Any, Optional, Tuple
 import pandas as pd
 import numpy as np
+import uuid
+from datetime import datetime
 
 from .base_strategy import BaseStrategy, StrategySignal, StrategyConfig
 from .regime_detector import NoLookAheadRegimeDetector
 from .strategy_matrix import StrategyMatrix, StrategyAllocation
 from .strategies import TrendFollowingStrategy, MeanReversionStrategy
 from src.core.patterns import BaseManager, LoggerFactory
+
+# Import enhanced logging if available
+try:
+    from src.utils.trading_logger import TradingMode, LogCategory
+    ENHANCED_LOGGING_AVAILABLE = True
+except ImportError:
+    ENHANCED_LOGGING_AVAILABLE = False
 
 
 class StrategyManager(BaseManager):
@@ -38,6 +47,9 @@ class StrategyManager(BaseManager):
         """
         super().__init__("StrategyManager", config)
 
+        # Enhanced logging setup
+        self._setup_enhanced_logging()
+
         # Core components
         self.regime_detector = NoLookAheadRegimeDetector()
         self.strategy_matrix = StrategyMatrix()
@@ -45,9 +57,25 @@ class StrategyManager(BaseManager):
         # Strategy instances
         self.strategies: Dict[str, BaseStrategy] = {}
 
+        # Trading session tracking
+        self.current_session_id = str(uuid.uuid4())
+        self.session_start_time = datetime.now()
+
+        # Signal aggregation tracking
+        self.signal_count = 0
+        self.last_regime_info = None
+        self.last_allocation = None
+
         # Initialize default strategies if no configs provided
         if strategy_configs is None:
             strategy_configs = self._get_default_configs()
+
+        self.logger.info(
+            "StrategyManager initialized",
+            session_id=self.current_session_id,
+            total_strategies=len(strategy_configs),
+            strategy_names=[config.name for config in strategy_configs]
+        )
 
         # Initialize strategies
         for config in strategy_configs:
@@ -60,8 +88,35 @@ class StrategyManager(BaseManager):
         # Performance tracking
         self.signal_history: List[Dict[str, Any]] = []
 
-        # Setup logger
-        self.logger = LoggerFactory.get_strategy_logger("StrategyManager")
+        # Enhanced logging methods - set up after logger initialization
+        self._setup_enhanced_logging_methods()
+
+    def _setup_enhanced_logging(self):
+        """Setup enhanced logging for strategy manager"""
+        if ENHANCED_LOGGING_AVAILABLE:
+            # Use enhanced logger factory for strategy manager
+            self.logger = LoggerFactory.get_component_trading_logger(
+                component="strategy_engine",
+                strategy="manager"
+            )
+        else:
+            # Fallback to standard logging
+            self.logger = LoggerFactory.get_strategy_logger("StrategyManager")
+
+    def _setup_enhanced_logging_methods(self):
+        """Setup enhanced logging methods for strategy manager"""
+        if hasattr(self.logger, 'log_signal'):
+            # Enhanced logger available
+            self.log_signal_workflow = self._enhanced_log_signal_workflow
+            self.log_regime_detection = self._enhanced_log_regime_detection
+            self.log_strategy_allocation = self._enhanced_log_strategy_allocation
+            self.log_signal_aggregation = self._enhanced_log_signal_aggregation
+        else:
+            # Standard logger - use basic methods
+            self.log_signal_workflow = self._basic_log_signal_workflow
+            self.log_regime_detection = self._basic_log_regime_detection
+            self.log_strategy_allocation = self._basic_log_strategy_allocation
+            self.log_signal_aggregation = self._basic_log_signal_aggregation
 
     async def _do_initialize(self) -> None:
         """Initialize strategy manager"""
@@ -136,6 +191,10 @@ class StrategyManager(BaseManager):
                 - allocation: Strategy allocation weights
         """
         try:
+            # Generate correlation ID for this signal workflow
+            import uuid
+            correlation_id = str(uuid.uuid4())
+
             # Step 1: Detect current market regime
             ohlcv_data = market_data.get("ohlcv_data")
             if current_index is not None and isinstance(ohlcv_data, pd.DataFrame):
@@ -148,23 +207,75 @@ class StrategyManager(BaseManager):
                     'duration': 0
                 }
 
+            # Log regime detection with change detection
+            regime_change = (self.last_regime_info is None or
+                           self.last_regime_info.get('regime') != regime_info.get('regime'))
+
+            self.log_regime_detection(
+                regime_info,
+                correlation_id=correlation_id,
+                symbol=market_data.get('symbol', 'UNKNOWN'),
+                previous_regime=self.last_regime_info.get('regime') if self.last_regime_info else None,
+                regime_change=regime_change,
+                hmm_models_available=hasattr(self.regime_detector, 'hmm_model') and self.regime_detector.hmm_model is not None
+            )
+
+            self.last_regime_info = regime_info
+
             # Step 2: Get strategy allocation based on regime
             allocation = self.strategy_matrix.get_strategy_allocation(regime_info)
+
+            # Log strategy allocation with change detection
+            allocation_change = (self.last_allocation is None or
+                               self.last_allocation != {name: getattr(alloc, 'weight', alloc) for name, alloc in allocation.items()})
+
+            self.log_strategy_allocation(
+                allocation,
+                regime_info,
+                correlation_id=correlation_id,
+                allocation_change=allocation_change,
+                previous_allocation=self.last_allocation
+            )
+
+            self.last_allocation = {name: getattr(alloc, 'weight', alloc) for name, alloc in allocation.items()}
 
             # Step 3: Generate signals from individual strategies
             strategy_signals = {}
             for strategy_name, strategy in self.strategies.items():
                 if strategy.enabled:
                     try:
+                        # Set trading session context for individual strategy
+                        strategy.set_trading_session(
+                            session_id=self.current_session_id,
+                            correlation_id=correlation_id
+                        )
                         signal = strategy.generate_signal(market_data)
                         strategy_signals[strategy_name] = signal
                     except Exception as e:
                         # Handle strategy-specific errors gracefully
-                        print(f"Error in strategy {strategy_name}: {e}")
+                        self.logger.error(
+                            f"Strategy {strategy_name} failed to generate signal: {e}",
+                            strategy_name=strategy_name,
+                            error_type=type(e).__name__,
+                            error_message=str(e),
+                            correlation_id=correlation_id,
+                            session_id=self.current_session_id,
+                            symbol=market_data.get("symbol", "UNKNOWN")
+                        )
                         strategy_signals[strategy_name] = self._error_signal(market_data.get("symbol", "UNKNOWN"))
 
             # Step 4: Aggregate signals using allocation weights
             primary_signal = self._aggregate_signals(strategy_signals, allocation, regime_info)
+
+            # Log signal aggregation
+            self.log_signal_aggregation(
+                strategy_signals,
+                primary_signal,
+                correlation_id=correlation_id,
+                regime=regime_info.get('regime', 'UNKNOWN'),
+                enabled_strategies=[name for name, alloc in allocation.items() if getattr(alloc, 'enabled', True)],
+                disabled_strategies=[name for name, alloc in allocation.items() if not getattr(alloc, 'enabled', True)]
+            )
 
             # Step 5: Log and track performance
             signal_data = {
@@ -181,6 +292,21 @@ class StrategyManager(BaseManager):
             # Keep only recent history
             if len(self.signal_history) > 1000:
                 self.signal_history = self.signal_history[-1000:]
+
+            # Log complete workflow with performance metrics
+            self.signal_count += 1
+            workflow_end_time = pd.Timestamp.now()
+            workflow_duration = (workflow_end_time - signal_data["timestamp"]).total_seconds() * 1000  # milliseconds
+
+            self.log_signal_workflow(
+                market_data,
+                signal_data,
+                correlation_id=correlation_id,
+                workflow_duration_ms=workflow_duration,
+                signal_sequence_number=self.signal_count,
+                enabled_strategy_count=len([name for name, alloc in allocation.items() if getattr(alloc, 'enabled', True)]),
+                total_strategy_count=len(self.strategies)
+            )
 
             return signal_data
 
@@ -396,3 +522,199 @@ class StrategyManager(BaseManager):
 
         self.strategy_matrix.reset_performance_tracking()
         self.signal_history.clear()
+
+    # Enhanced Logging Methods
+
+    def _enhanced_log_signal_workflow(self, market_data: Dict[str, Any], result: Dict[str, Any], **context):
+        """Log complete signal generation workflow using enhanced logger"""
+        try:
+            self.logger.log_signal(
+                message=f"Signal workflow completed for {market_data.get('symbol', 'UNKNOWN')}",
+                symbol=market_data.get('symbol', 'UNKNOWN'),
+                signal_type=result['primary_signal'].action,
+                strength=result['primary_signal'].strength,
+                confidence=result['primary_signal'].confidence,
+                strategy="manager",
+                correlation_id=context.get('correlation_id'),
+                session_id=self.current_session_id,
+                regime=result['regime_info'].get('regime', 'UNKNOWN'),
+                regime_confidence=result['regime_info'].get('confidence', 0.0),
+                participating_strategies=list(result['strategy_signals'].keys()),
+                allocation_weights={name: alloc for name, alloc in result['allocation'].items()},
+                market_price=market_data.get('close'),
+                workflow_duration_ms=context.get('workflow_duration_ms', 0),
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced workflow logging failed: {e}")
+            self._basic_log_signal_workflow(market_data, result, **context)
+
+    def _basic_log_signal_workflow(self, market_data: Dict[str, Any], result: Dict[str, Any], **context):
+        """Log signal workflow using basic logger"""
+        primary_signal = result['primary_signal']
+        regime_info = result['regime_info']
+
+        self.logger.info(
+            f"[StrategyManager] Signal workflow: {primary_signal.action} {market_data.get('symbol', 'UNKNOWN')} "
+            f"(strength: {primary_signal.strength:.3f}, confidence: {primary_signal.confidence:.3f}, "
+            f"regime: {regime_info.get('regime', 'UNKNOWN')})",
+            extra={
+                'symbol': market_data.get('symbol', 'UNKNOWN'),
+                'signal_action': primary_signal.action,
+                'signal_strength': primary_signal.strength,
+                'signal_confidence': primary_signal.confidence,
+                'regime': regime_info.get('regime', 'UNKNOWN'),
+                'regime_confidence': regime_info.get('confidence', 0.0),
+                'strategy_count': len(result['strategy_signals']),
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_regime_detection(self, regime_info: Dict[str, Any], **context):
+        """Log regime detection using enhanced logger"""
+        try:
+            self.logger.log_analysis(
+                message=f"Regime detected: {regime_info.get('regime', 'UNKNOWN')}",
+                analysis_type="regime_detection",
+                symbol=context.get('symbol', 'UNKNOWN'),
+                correlation_id=context.get('correlation_id'),
+                session_id=self.current_session_id,
+                regime=regime_info.get('regime', 'UNKNOWN'),
+                regime_confidence=regime_info.get('confidence', 0.0),
+                volatility_forecast=regime_info.get('volatility_forecast', 0.0),
+                regime_duration=regime_info.get('duration', 0),
+                previous_regime=context.get('previous_regime'),
+                regime_change=context.get('regime_change', False),
+                hmm_models_available=context.get('hmm_models_available', False),
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced regime logging failed: {e}")
+            self._basic_log_regime_detection(regime_info, **context)
+
+    def _basic_log_regime_detection(self, regime_info: Dict[str, Any], **context):
+        """Log regime detection using basic logger"""
+        regime_change_msg = " (CHANGE)" if context.get('regime_change', False) else ""
+
+        self.logger.info(
+            f"[StrategyManager] Regime: {regime_info.get('regime', 'UNKNOWN')}{regime_change_msg} "
+            f"(confidence: {regime_info.get('confidence', 0.0):.3f}, "
+            f"volatility: {regime_info.get('volatility_forecast', 0.0):.4f})",
+            extra={
+                'regime': regime_info.get('regime', 'UNKNOWN'),
+                'regime_confidence': regime_info.get('confidence', 0.0),
+                'volatility_forecast': regime_info.get('volatility_forecast', 0.0),
+                'regime_duration': regime_info.get('duration', 0),
+                'regime_change': context.get('regime_change', False),
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_strategy_allocation(self, allocation: Dict[str, Any], regime_info: Dict[str, Any], **context):
+        """Log strategy allocation using enhanced logger"""
+        try:
+            # Prepare allocation data
+            allocation_data = {}
+            total_weight = 0.0
+
+            for strategy_name, alloc_info in allocation.items():
+                if hasattr(alloc_info, 'weight'):
+                    weight = alloc_info.weight
+                    enabled = alloc_info.enabled
+                else:
+                    weight = alloc_info
+                    enabled = True
+
+                allocation_data[f"{strategy_name}_weight"] = weight
+                allocation_data[f"{strategy_name}_enabled"] = enabled
+                total_weight += weight if enabled else 0.0
+
+            self.logger.log_analysis(
+                message=f"Strategy allocation updated for {regime_info.get('regime', 'UNKNOWN')} regime",
+                analysis_type="strategy_allocation",
+                correlation_id=context.get('correlation_id'),
+                session_id=self.current_session_id,
+                regime=regime_info.get('regime', 'UNKNOWN'),
+                regime_confidence=regime_info.get('confidence', 0.0),
+                total_allocated_weight=total_weight,
+                allocation_count=len(allocation),
+                **allocation_data,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced allocation logging failed: {e}")
+            self._basic_log_strategy_allocation(allocation, regime_info, **context)
+
+    def _basic_log_strategy_allocation(self, allocation: Dict[str, Any], regime_info: Dict[str, Any], **context):
+        """Log strategy allocation using basic logger"""
+        allocation_str = ", ".join([
+            f"{name}: {getattr(alloc, 'weight', alloc):.2f}"
+            for name, alloc in allocation.items()
+        ])
+
+        self.logger.info(
+            f"[StrategyManager] Allocation for {regime_info.get('regime', 'UNKNOWN')}: {allocation_str}",
+            extra={
+                'regime': regime_info.get('regime', 'UNKNOWN'),
+                'allocation_data': {name: getattr(alloc, 'weight', alloc) for name, alloc in allocation.items()},
+                'allocation_count': len(allocation),
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_signal_aggregation(self, individual_signals: Dict[str, Any], primary_signal: Any, **context):
+        """Log signal aggregation using enhanced logger"""
+        try:
+            # Analyze signal distribution
+            buy_count = sum(1 for signal in individual_signals.values() if hasattr(signal, 'action') and signal.action == 'BUY')
+            sell_count = sum(1 for signal in individual_signals.values() if hasattr(signal, 'action') and signal.action == 'SELL')
+            hold_count = len(individual_signals) - buy_count - sell_count
+
+            avg_confidence = sum(
+                getattr(signal, 'confidence', 0.0) for signal in individual_signals.values()
+            ) / len(individual_signals) if individual_signals else 0.0
+
+            self.logger.log_analysis(
+                message=f"Signal aggregation: {len(individual_signals)} strategies → {primary_signal.action}",
+                analysis_type="signal_aggregation",
+                correlation_id=context.get('correlation_id'),
+                session_id=self.current_session_id,
+                primary_action=primary_signal.action,
+                primary_strength=primary_signal.strength,
+                primary_confidence=primary_signal.confidence,
+                individual_signals_count=len(individual_signals),
+                buy_signals_count=buy_count,
+                sell_signals_count=sell_count,
+                hold_signals_count=hold_count,
+                average_individual_confidence=avg_confidence,
+                aggregation_method="weighted_average",
+                stop_loss=primary_signal.stop_loss,
+                take_profit=primary_signal.take_profit,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced aggregation logging failed: {e}")
+            self._basic_log_signal_aggregation(individual_signals, primary_signal, **context)
+
+    def _basic_log_signal_aggregation(self, individual_signals: Dict[str, Any], primary_signal: Any, **context):
+        """Log signal aggregation using basic logger"""
+        signal_summary = []
+        for name, signal in individual_signals.items():
+            if hasattr(signal, 'action'):
+                signal_summary.append(f"{name}:{signal.action[:1]}")  # First letter of action
+
+        self.logger.info(
+            f"[StrategyManager] Aggregation: [{', '.join(signal_summary)}] → {primary_signal.action} "
+            f"(strength: {primary_signal.strength:.3f})",
+            extra={
+                'primary_action': primary_signal.action,
+                'primary_strength': primary_signal.strength,
+                'primary_confidence': primary_signal.confidence,
+                'individual_count': len(individual_signals),
+                'session_id': self.current_session_id,
+                **context
+            }
+        )

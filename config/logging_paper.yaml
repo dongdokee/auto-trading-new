@@ -1,0 +1,227 @@
+# Paper Trading Logging Configuration
+# Optimized for development, validation, and debugging
+
+# Global logging settings
+logging:
+  level: DEBUG
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  enable_structured: true
+
+  # Paper trading specific settings
+  mode: paper
+  paper_trading: true
+  testnet: true
+
+  # File logging configuration
+  file_logging:
+    enabled: true
+    log_dir: "logs/paper_trading"
+    max_file_size: 50MB  # Smaller files for development
+    backup_count: 10
+    compression: true
+
+    # Separate log files by category
+    separate_files:
+      trade_journal: "trade_journal.log"
+      strategy_signals: "strategy_signals.log"
+      execution: "execution.log"
+      risk_management: "risk_management.log"
+      market_data: "market_data.log"
+      performance: "performance.log"
+      system: "system.log"
+      debug: "debug.log"
+
+# Trading-specific logging configuration
+trading_logging:
+  # Unified trading logger settings
+  unified_logger:
+    enabled: true
+    enable_trade_journal: true
+    enable_performance_tracking: true
+    enable_compliance_logging: false  # Not needed for paper trading
+    correlation_tracking: true
+
+  # Trade journal configuration
+  trade_journal:
+    database_path: "data/paper_trading_journal.db"
+    auto_create_tables: true
+    enable_analytics: true
+    export_formats: ["csv", "json", "html"]
+
+  # Performance analytics configuration
+  performance_analytics:
+    enabled: true
+    real_time_calculation: true
+    benchmark_symbol: "BTCUSDT"
+    enable_comparison: true
+    cache_results: true
+    report_generation:
+      auto_generate: true
+      formats: ["html", "json"]
+      schedule: "daily"  # Generate daily reports
+
+# Component-specific logging levels and features
+components:
+  strategy_engine:
+    level: DEBUG
+    features:
+      signal_generation: true
+      market_regime_detection: true
+      confidence_tracking: true
+      strategy_allocation: true
+      performance_attribution: true
+      detailed_reasoning: true  # Paper trading can afford verbose logs
+
+  execution_engine:
+    level: DEBUG
+    features:
+      order_lifecycle: true
+      execution_algorithms: true
+      slippage_tracking: true
+      latency_measurement: true
+      fill_simulation: true
+      market_impact_modeling: true
+
+  risk_management:
+    level: DEBUG
+    features:
+      position_sizing: true
+      risk_calculations: true
+      limit_monitoring: true
+      drawdown_tracking: true
+      var_calculation: true
+      stress_testing: true
+
+  portfolio_management:
+    level: DEBUG
+    features:
+      optimization_process: true
+      rebalancing_decisions: true
+      performance_attribution: true
+      allocation_changes: true
+      transaction_costs: true
+
+  market_data:
+    level: INFO  # Market data can be verbose
+    features:
+      data_quality_checks: true
+      anomaly_detection: true
+      latency_tracking: true
+      websocket_status: true
+      orderbook_analysis: true
+
+  api_integration:
+    level: DEBUG
+    features:
+      request_response_logging: true
+      rate_limit_tracking: true
+      connection_status: true
+      error_recovery: true
+      testnet_validation: true
+
+# Advanced logging features for paper trading
+advanced_features:
+  # Market condition logging
+  market_conditions:
+    enabled: true
+    log_regime_changes: true
+    volatility_tracking: true
+    liquidity_analysis: true
+    news_impact_detection: false  # Disable for now
+
+  # Validation and comparison
+  validation:
+    enabled: true
+    backtest_comparison: true
+    real_time_validation: true
+    drift_detection: true
+
+  # Debugging and development
+  debugging:
+    enabled: true
+    verbose_error_logging: true
+    stack_trace_logging: true
+    memory_usage_tracking: true
+    performance_profiling: true
+
+  # Analytics and insights
+  analytics:
+    enabled: true
+    real_time_metrics: true
+    correlation_analysis: true
+    pattern_recognition: false  # CPU intensive
+    ml_model_tracking: false    # Not implemented yet
+
+# Alerting configuration for paper trading
+alerting:
+  enabled: true
+  channels:
+    console: true
+    file: true
+    webhook: false  # Disable for paper trading
+
+  alert_levels:
+    strategy_signal: INFO
+    execution_event: INFO
+    risk_violation: WARNING
+    system_error: ERROR
+    performance_milestone: INFO
+
+  # Paper trading specific alerts
+  paper_trading_alerts:
+    simulation_start: true
+    simulation_end: true
+    performance_summary: true
+    backtest_comparison: true
+    system_health: true
+
+# Data retention policy
+retention:
+  # Keep more data for paper trading analysis
+  log_files:
+    keep_days: 90
+    archive_after_days: 30
+
+  trade_journal:
+    keep_days: 365  # Keep full year for analysis
+
+  performance_data:
+    keep_days: 365
+
+  debug_logs:
+    keep_days: 30
+
+# Integration settings
+integrations:
+  # Database integration
+  database:
+    auto_create_schemas: true
+    enable_metrics_table: true
+
+  # Monitoring integration
+  monitoring:
+    enable_health_checks: true
+    metrics_collection: true
+
+  # Export integration
+  exports:
+    auto_export_daily: true
+    export_formats: ["csv", "json"]
+    export_path: "exports/paper_trading"
+
+# Environment-specific overrides
+environment_overrides:
+  development:
+    logging.level: DEBUG
+    components.*.level: DEBUG
+    advanced_features.debugging.enabled: true
+
+  testing:
+    logging.level: INFO
+    file_logging.enabled: false
+    trade_journal.database_path: ":memory:"
+
+  staging:
+    logging.level: INFO
+    advanced_features.debugging.enabled: false
+    retention.log_files.keep_days: 30

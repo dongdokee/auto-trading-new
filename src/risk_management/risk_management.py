@@ -6,6 +6,14 @@ TDD 방식으로 구현됨 - 설정 가능한 파라미터 구조
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 from src.utils.logger import TradingLogger, get_trading_logger
+from src.core.patterns import LoggerFactory
+
+# Import enhanced logging if available
+try:
+    from src.utils.trading_logger import TradingMode, LogCategory
+    ENHANCED_LOGGING_AVAILABLE = True
+except ImportError:
+    ENHANCED_LOGGING_AVAILABLE = False
 
 
 class RiskController:
@@ -26,13 +34,15 @@ class RiskController:
 
         self.initial_capital = initial_capital_usdt
 
-        # 로깅 시스템 초기화
-        self.logger = logger or get_trading_logger("risk_controller", log_to_file=False)
+        # Enhanced logging setup
+        self._setup_enhanced_logging(logger)
 
-        # 리스크 컨트롤러 초기화 로그
-        self.logger.log_risk(
-            "Risk controller initialized",
-            level="INFO",
+        # Trading session tracking
+        self.current_session_id = None
+        self.current_correlation_id = None
+
+        # Log risk controller initialization
+        self._log_initialization(
             initial_capital_usdt=initial_capital_usdt,
             var_daily_pct=var_daily_pct,
             max_drawdown_pct=max_drawdown_pct,
@@ -64,6 +74,76 @@ class RiskController:
         self.drawdown_start_time = None  # 드로다운 시작 시간
         self.recovery_periods = []  # 드로다운 복구 기간 기록
 
+    def _setup_enhanced_logging(self, logger: Optional[TradingLogger] = None):
+        """Setup enhanced logging for risk controller"""
+        if ENHANCED_LOGGING_AVAILABLE and logger is None:
+            # Use enhanced logger factory for risk management
+            self.logger = LoggerFactory.get_component_trading_logger(
+                component="risk_management",
+                strategy="risk_controller"
+            )
+        else:
+            # Use provided logger or fallback to standard logging
+            self.logger = logger or get_trading_logger("risk_controller", log_to_file=False)
+
+        # Setup logging methods
+        self._setup_logging_methods()
+
+    def _setup_logging_methods(self):
+        """Setup enhanced logging methods"""
+        if hasattr(self.logger, 'log_risk_event'):
+            # Enhanced logger available
+            self.log_risk_violation = self._enhanced_log_risk_violation
+            self.log_risk_check = self._enhanced_log_risk_check
+            self.log_position_sizing = self._enhanced_log_position_sizing
+            self.log_kelly_calculation = self._enhanced_log_kelly_calculation
+        else:
+            # Standard logger - use basic methods (existing log_risk calls)
+            self.log_risk_violation = self._basic_log_risk_violation
+            self.log_risk_check = self._basic_log_risk_check
+            self.log_position_sizing = self._basic_log_position_sizing
+            self.log_kelly_calculation = self._basic_log_kelly_calculation
+
+    def set_trading_session(self, session_id: str, correlation_id: str = None):
+        """Set trading session context for logging"""
+        self.current_session_id = session_id
+        self.current_correlation_id = correlation_id
+
+        # Update logger context if enhanced logging is available
+        if hasattr(self.logger, 'base_logger') and hasattr(self.logger.base_logger, 'set_context'):
+            self.logger.base_logger.set_context(
+                session_id=session_id,
+                correlation_id=correlation_id,
+                component="risk_management"
+            )
+
+    def _log_initialization(self, **params):
+        """Log risk controller initialization"""
+        if hasattr(self.logger, 'log_risk_event'):
+            # Enhanced logging
+            try:
+                self.logger.log_risk_event(
+                    message="Risk controller initialized",
+                    event_type="initialization",
+                    session_id=self.current_session_id,
+                    correlation_id=self.current_correlation_id,
+                    **params
+                )
+            except Exception as e:
+                # Fallback to basic logging
+                self.logger.log_risk(
+                    "Risk controller initialized",
+                    level="INFO",
+                    **params
+                )
+        else:
+            # Basic logging (existing)
+            self.logger.log_risk(
+                "Risk controller initialized",
+                level="INFO",
+                **params
+            )
+
     def check_var_limit(self, portfolio_state: Dict) -> List[Tuple[str, float]]:
         """VaR 한도 체크"""
         violations = []
@@ -71,27 +151,27 @@ class RiskController:
         current_var = portfolio_state.get('current_var_usdt', 0.0)
         var_limit = self.risk_limits['var_daily_usdt']
 
-        # VaR 상태 로깅 (INFO 레벨)
-        self.logger.log_risk(
-            "VaR limit check performed",
-            level="INFO",
-            current_var_usdt=current_var,
-            var_limit_usdt=var_limit,
-            utilization_pct=(current_var / var_limit * 100) if var_limit > 0 else 0
+        # Log VaR check with enhanced logging
+        self.log_risk_check(
+            check_type="var_limit",
+            current_value=current_var,
+            limit_value=var_limit,
+            utilization_pct=(current_var / var_limit * 100) if var_limit > 0 else 0,
+            portfolio_state=portfolio_state
         )
 
         if current_var > var_limit:
             violations.append(('VAR_USDT', current_var))
 
-            # VaR 한도 위반 경고 로깅 (WARNING 레벨)
-            self.logger.log_risk(
-                "VaR limit exceeded - Risk threshold violation detected",
-                level="WARNING",
-                event_type="VAR_LIMIT_VIOLATION",
-                current_var_usdt=current_var,
-                var_limit_usdt=var_limit,
-                excess_usdt=current_var - var_limit,
-                excess_pct=((current_var - var_limit) / var_limit * 100)
+            # Log VaR violation with enhanced logging
+            self.log_risk_violation(
+                violation_type="VAR_LIMIT_VIOLATION",
+                current_value=current_var,
+                limit_value=var_limit,
+                excess_amount=current_var - var_limit,
+                excess_percentage=((current_var - var_limit) / var_limit * 100),
+                severity="WARNING",
+                portfolio_state=portfolio_state
             )
 
         return violations
@@ -486,3 +566,142 @@ class RiskController:
             'min_recovery_days': min(recovery_days),
             'recovery_history': self.recovery_periods.copy()
         }
+
+    # Enhanced Logging Methods
+
+    def _enhanced_log_risk_violation(self, violation_type: str, current_value: float, limit_value: float,
+                                    excess_amount: float = None, excess_percentage: float = None,
+                                    severity: str = "WARNING", **context):
+        """Log risk violation using enhanced logger"""
+        try:
+            self.logger.log_risk_event(
+                message=f"Risk violation: {violation_type}",
+                event_type="risk_violation",
+                violation_type=violation_type,
+                current_value=current_value,
+                limit_value=limit_value,
+                excess_amount=excess_amount or (current_value - limit_value),
+                excess_percentage=excess_percentage or ((current_value - limit_value) / limit_value * 100),
+                severity=severity,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                requires_action=severity in ['CRITICAL', 'WARNING'],
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced risk violation logging failed: {e}")
+            self._basic_log_risk_violation(violation_type, current_value, limit_value, excess_amount, excess_percentage, severity, **context)
+
+    def _basic_log_risk_violation(self, violation_type: str, current_value: float, limit_value: float,
+                                 excess_amount: float = None, excess_percentage: float = None,
+                                 severity: str = "WARNING", **context):
+        """Log risk violation using basic logger"""
+        excess_amount = excess_amount or (current_value - limit_value)
+        excess_percentage = excess_percentage or ((current_value - limit_value) / limit_value * 100)
+
+        log_level = "CRITICAL" if severity == "CRITICAL" else "WARNING"
+        self.logger.log_risk(
+            f"Risk violation: {violation_type} - {current_value:.2f} exceeds limit {limit_value:.2f} by {excess_amount:.2f} ({excess_percentage:.1f}%)",
+            level=log_level,
+            event_type=violation_type,
+            current_value=current_value,
+            limit_value=limit_value,
+            excess_amount=excess_amount,
+            excess_percentage=excess_percentage,
+            **context
+        )
+
+    def _enhanced_log_risk_check(self, check_type: str, current_value: float, limit_value: float,
+                                utilization_pct: float = None, **context):
+        """Log risk check using enhanced logger"""
+        try:
+            self.logger.log_risk_event(
+                message=f"Risk check: {check_type}",
+                event_type="risk_check",
+                check_type=check_type,
+                current_value=current_value,
+                limit_value=limit_value,
+                utilization_percentage=utilization_pct or (current_value / limit_value * 100) if limit_value > 0 else 0,
+                is_within_limit=current_value <= limit_value,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced risk check logging failed: {e}")
+            self._basic_log_risk_check(check_type, current_value, limit_value, utilization_pct, **context)
+
+    def _basic_log_risk_check(self, check_type: str, current_value: float, limit_value: float,
+                             utilization_pct: float = None, **context):
+        """Log risk check using basic logger"""
+        utilization_pct = utilization_pct or (current_value / limit_value * 100) if limit_value > 0 else 0
+
+        self.logger.log_risk(
+            f"Risk check: {check_type} - {current_value:.2f}/{limit_value:.2f} ({utilization_pct:.1f}%)",
+            level="INFO",
+            check_type=check_type,
+            current_value=current_value,
+            limit_value=limit_value,
+            utilization_pct=utilization_pct,
+            **context
+        )
+
+    def _enhanced_log_position_sizing(self, position_data: dict, **context):
+        """Log position sizing using enhanced logger"""
+        try:
+            self.logger.log_position(
+                message=f"Position sizing calculated: {position_data.get('symbol', 'UNKNOWN')}",
+                symbol=position_data.get('symbol', 'UNKNOWN'),
+                side=position_data.get('side', 'UNKNOWN'),
+                size=position_data.get('size', 0),
+                risk_amount=position_data.get('risk_amount', 0),
+                position_value=position_data.get('position_value', 0),
+                leverage=position_data.get('leverage', 1),
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced position sizing logging failed: {e}")
+            self._basic_log_position_sizing(position_data, **context)
+
+    def _basic_log_position_sizing(self, position_data: dict, **context):
+        """Log position sizing using basic logger"""
+        self.logger.log_risk(
+            f"Position sizing: {position_data.get('symbol', 'UNKNOWN')} {position_data.get('side', 'UNKNOWN')} size={position_data.get('size', 0):.4f}",
+            level="INFO",
+            event_type="position_sizing",
+            **position_data,
+            **context
+        )
+
+    def _enhanced_log_kelly_calculation(self, kelly_fraction: float, returns_data: dict, regime: str = None, **context):
+        """Log Kelly criterion calculation using enhanced logger"""
+        try:
+            self.logger.log_analysis(
+                message=f"Kelly criterion calculated: {kelly_fraction:.4f} for {regime or 'NEUTRAL'} regime",
+                analysis_type="kelly_criterion",
+                kelly_fraction=kelly_fraction,
+                regime=regime or 'NEUTRAL',
+                expected_return=returns_data.get('expected_return', 0),
+                return_variance=returns_data.get('variance', 0),
+                sample_size=returns_data.get('sample_size', 0),
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced Kelly calculation logging failed: {e}")
+            self._basic_log_kelly_calculation(kelly_fraction, returns_data, regime, **context)
+
+    def _basic_log_kelly_calculation(self, kelly_fraction: float, returns_data: dict, regime: str = None, **context):
+        """Log Kelly criterion calculation using basic logger"""
+        self.logger.log_risk(
+            f"Kelly calculation: fraction={kelly_fraction:.4f}, regime={regime or 'NEUTRAL'}, sample_size={returns_data.get('sample_size', 0)}",
+            level="INFO",
+            event_type="kelly_calculation",
+            kelly_fraction=kelly_fraction,
+            regime=regime,
+            **returns_data,
+            **context
+        )

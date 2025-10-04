@@ -9,6 +9,13 @@ import heapq
 from src.execution.models import Order, OrderStatus
 from src.core.patterns import BaseManager, LoggerFactory
 
+# Import enhanced logging if available
+try:
+    from src.utils.trading_logger import TradingMode, LogCategory
+    ENHANCED_LOGGING_AVAILABLE = True
+except ImportError:
+    ENHANCED_LOGGING_AVAILABLE = False
+
 
 @dataclass
 class OrderInfo:
@@ -42,7 +49,56 @@ class OrderManager(BaseManager):
         self.max_history_size: int = self.config.get('max_history_size', 1000)  # Default history limit
 
         self._lock = asyncio.Lock()
-        self.logger = LoggerFactory.get_execution_logger()
+
+        # Enhanced logging setup
+        self._setup_enhanced_logging()
+
+        # Trading session tracking
+        self.current_session_id = None
+        self.current_correlation_id = None
+
+    def _setup_enhanced_logging(self):
+        """Setup enhanced logging for order manager"""
+        if ENHANCED_LOGGING_AVAILABLE:
+            # Use enhanced logger factory for execution engine
+            self.logger = LoggerFactory.get_component_trading_logger(
+                component="execution_engine",
+                strategy="order_manager"
+            )
+        else:
+            # Fallback to standard logging
+            self.logger = LoggerFactory.get_execution_logger()
+
+        # Setup logging methods
+        self._setup_logging_methods()
+
+    def _setup_logging_methods(self):
+        """Setup enhanced logging methods"""
+        if hasattr(self.logger, 'log_order'):
+            # Enhanced logger available
+            self.log_order_submission = self._enhanced_log_order_submission
+            self.log_order_status_update = self._enhanced_log_order_status_update
+            self.log_order_cancellation = self._enhanced_log_order_cancellation
+            self.log_order_lifecycle = self._enhanced_log_order_lifecycle
+        else:
+            # Standard logger - use basic methods
+            self.log_order_submission = self._basic_log_order_submission
+            self.log_order_status_update = self._basic_log_order_status_update
+            self.log_order_cancellation = self._basic_log_order_cancellation
+            self.log_order_lifecycle = self._basic_log_order_lifecycle
+
+    def set_trading_session(self, session_id: str, correlation_id: str = None):
+        """Set trading session context for logging"""
+        self.current_session_id = session_id
+        self.current_correlation_id = correlation_id
+
+        # Update logger context if enhanced logging is available
+        if hasattr(self.logger, 'base_logger') and hasattr(self.logger.base_logger, 'set_context'):
+            self.logger.base_logger.set_context(
+                session_id=session_id,
+                correlation_id=correlation_id,
+                component="execution_engine"
+            )
 
     async def _do_initialize(self) -> None:
         """Initialize order manager"""
@@ -84,6 +140,13 @@ class OrderManager(BaseManager):
             # Add to active orders
             self.active_orders[order_id] = order_info
 
+            # Log order submission
+            self.log_order_submission(
+                order_id=order_id,
+                order=order,
+                order_info=order_info
+            )
+
             return order_id
 
     async def cancel_order(self, order_id: str) -> bool:
@@ -106,6 +169,13 @@ class OrderManager(BaseManager):
             self.order_history.append(order_info)
             del self.active_orders[order_id]
 
+            # Log order cancellation
+            self.log_order_cancellation(
+                order_id=order_id,
+                order_info=order_info,
+                reason="manual_cancellation"
+            )
+
             return True
 
     async def update_order_status(self, order_id: str, filled_qty: Decimal, avg_price: Decimal):
@@ -119,6 +189,7 @@ class OrderManager(BaseManager):
             order_info.avg_price = avg_price
 
             # Determine status based on fill
+            previous_status = order_info.status
             if filled_qty >= order_info.order.size:
                 # Fully filled (or overfilled)
                 order_info.status = OrderStatus.FILLED
@@ -127,9 +198,26 @@ class OrderManager(BaseManager):
                 # Move to history
                 self.order_history.append(order_info)
                 del self.active_orders[order_id]
+
+                # Log order completion
+                self.log_order_lifecycle(
+                    order_id=order_id,
+                    order_info=order_info,
+                    event="order_filled",
+                    previous_status=previous_status
+                )
             elif filled_qty > 0:
                 # Partially filled
                 order_info.status = OrderStatus.PARTIALLY_FILLED
+
+                # Log partial fill
+                self.log_order_status_update(
+                    order_id=order_id,
+                    order_info=order_info,
+                    previous_status=previous_status,
+                    filled_qty=filled_qty,
+                    avg_price=avg_price
+                )
 
     async def increment_attempts(self, order_id: str):
         """Increment order attempt counter and check max attempts"""
@@ -310,3 +398,201 @@ class OrderManager(BaseManager):
             # Move to history
             self.order_history.append(order_info)
             del self.active_orders[order_id]
+
+            # Log order timeout
+            self.log_order_cancellation(
+                order_id=order_id,
+                order_info=order_info,
+                reason="timeout"
+            )
+
+    # Enhanced Logging Methods
+
+    def _enhanced_log_order_submission(self, order_id: str, order: Order, order_info: OrderInfo, **context):
+        """Log order submission using enhanced logger"""
+        try:
+            self.logger.log_order(
+                message=f"Order submitted: {order.side.value} {order.size} {order.symbol}",
+                order_id=order_id,
+                symbol=order.symbol,
+                side=order.side.value,
+                size=float(order.size),
+                urgency=order.urgency.value,
+                order_type="MARKET" if order.price is None else "LIMIT",
+                limit_price=float(order.price) if order.price else None,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                submitted_at=order_info.submitted_at.isoformat(),
+                active_orders_count=len(self.active_orders),
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced order submission logging failed: {e}")
+            self._basic_log_order_submission(order_id, order, order_info, **context)
+
+    def _basic_log_order_submission(self, order_id: str, order: Order, order_info: OrderInfo, **context):
+        """Log order submission using basic logger"""
+        order_type = "MARKET" if order.price is None else "LIMIT"
+        price_str = f" @ {order.price}" if order.price else ""
+
+        self.logger.info(
+            f"[OrderManager] Order submitted: {order_id[:8]} - {order.side.value} {order.size} {order.symbol}{price_str} ({order.urgency.value})",
+            extra={
+                'order_id': order_id,
+                'symbol': order.symbol,
+                'side': order.side.value,
+                'size': float(order.size),
+                'urgency': order.urgency.value,
+                'order_type': order_type,
+                'limit_price': float(order.price) if order.price else None,
+                'active_orders_count': len(self.active_orders),
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_order_status_update(self, order_id: str, order_info: OrderInfo, previous_status: OrderStatus,
+                                         filled_qty: Decimal, avg_price: Decimal, **context):
+        """Log order status update using enhanced logger"""
+        try:
+            fill_percentage = float(filled_qty / order_info.order.size * 100) if order_info.order.size > 0 else 0
+
+            self.logger.log_order(
+                message=f"Order status update: {order_info.status.value} - {fill_percentage:.1f}% filled",
+                order_id=order_id,
+                symbol=order_info.order.symbol,
+                status=order_info.status.value,
+                previous_status=previous_status.value,
+                filled_quantity=float(filled_qty),
+                filled_percentage=fill_percentage,
+                average_price=float(avg_price),
+                remaining_quantity=float(order_info.order.size - filled_qty),
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced order status logging failed: {e}")
+            self._basic_log_order_status_update(order_id, order_info, previous_status, filled_qty, avg_price, **context)
+
+    def _basic_log_order_status_update(self, order_id: str, order_info: OrderInfo, previous_status: OrderStatus,
+                                      filled_qty: Decimal, avg_price: Decimal, **context):
+        """Log order status update using basic logger"""
+        fill_percentage = float(filled_qty / order_info.order.size * 100) if order_info.order.size > 0 else 0
+
+        self.logger.info(
+            f"[OrderManager] Order {order_id[:8]} status: {previous_status.value} → {order_info.status.value} "
+            f"({fill_percentage:.1f}% filled @ {avg_price})",
+            extra={
+                'order_id': order_id,
+                'symbol': order_info.order.symbol,
+                'status': order_info.status.value,
+                'previous_status': previous_status.value,
+                'filled_quantity': float(filled_qty),
+                'filled_percentage': fill_percentage,
+                'average_price': float(avg_price),
+                'remaining_quantity': float(order_info.order.size - filled_qty),
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_order_cancellation(self, order_id: str, order_info: OrderInfo, reason: str, **context):
+        """Log order cancellation using enhanced logger"""
+        try:
+            duration = (order_info.cancelled_at - order_info.submitted_at).total_seconds() if order_info.cancelled_at else 0
+
+            self.logger.log_order(
+                message=f"Order cancelled: {reason} - {order_info.order.symbol}",
+                order_id=order_id,
+                symbol=order_info.order.symbol,
+                side=order_info.order.side.value,
+                size=float(order_info.order.size),
+                status="CANCELLED",
+                cancellation_reason=reason,
+                filled_quantity=float(order_info.filled_qty),
+                duration_seconds=duration,
+                attempts=order_info.attempts,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                cancelled_at=order_info.cancelled_at.isoformat() if order_info.cancelled_at else None,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced order cancellation logging failed: {e}")
+            self._basic_log_order_cancellation(order_id, order_info, reason, **context)
+
+    def _basic_log_order_cancellation(self, order_id: str, order_info: OrderInfo, reason: str, **context):
+        """Log order cancellation using basic logger"""
+        duration = (order_info.cancelled_at - order_info.submitted_at).total_seconds() if order_info.cancelled_at else 0
+        fill_status = f"({order_info.filled_qty}/{order_info.order.size} filled)" if order_info.filled_qty > 0 else "(unfilled)"
+
+        self.logger.warning(
+            f"[OrderManager] Order cancelled: {order_id[:8]} - {reason} {fill_status} after {duration:.1f}s",
+            extra={
+                'order_id': order_id,
+                'symbol': order_info.order.symbol,
+                'cancellation_reason': reason,
+                'filled_quantity': float(order_info.filled_qty),
+                'total_quantity': float(order_info.order.size),
+                'duration_seconds': duration,
+                'attempts': order_info.attempts,
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_order_lifecycle(self, order_id: str, order_info: OrderInfo, event: str, **context):
+        """Log order lifecycle events using enhanced logger"""
+        try:
+            duration = 0
+            if order_info.filled_at and order_info.submitted_at:
+                duration = (order_info.filled_at - order_info.submitted_at).total_seconds()
+
+            self.logger.log_order(
+                message=f"Order lifecycle: {event} - {order_info.order.symbol}",
+                order_id=order_id,
+                symbol=order_info.order.symbol,
+                side=order_info.order.side.value,
+                size=float(order_info.order.size),
+                lifecycle_event=event,
+                final_status=order_info.status.value,
+                total_filled=float(order_info.filled_qty),
+                average_price=float(order_info.avg_price) if order_info.avg_price > 0 else None,
+                execution_duration_seconds=duration,
+                total_attempts=order_info.attempts,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                submitted_at=order_info.submitted_at.isoformat(),
+                filled_at=order_info.filled_at.isoformat() if order_info.filled_at else None,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced order lifecycle logging failed: {e}")
+            self._basic_log_order_lifecycle(order_id, order_info, event, **context)
+
+    def _basic_log_order_lifecycle(self, order_id: str, order_info: OrderInfo, event: str, **context):
+        """Log order lifecycle events using basic logger"""
+        duration = 0
+        if order_info.filled_at and order_info.submitted_at:
+            duration = (order_info.filled_at - order_info.submitted_at).total_seconds()
+
+        avg_price_str = f" @ {order_info.avg_price}" if order_info.avg_price > 0 else ""
+
+        self.logger.info(
+            f"[OrderManager] Order lifecycle: {order_id[:8]} - {event} "
+            f"({order_info.filled_qty}/{order_info.order.size}{avg_price_str}, {duration:.1f}s, {order_info.attempts} attempts)",
+            extra={
+                'order_id': order_id,
+                'symbol': order_info.order.symbol,
+                'lifecycle_event': event,
+                'final_status': order_info.status.value,
+                'total_filled': float(order_info.filled_qty),
+                'total_quantity': float(order_info.order.size),
+                'average_price': float(order_info.avg_price) if order_info.avg_price > 0 else None,
+                'execution_duration_seconds': duration,
+                'total_attempts': order_info.attempts,
+                'session_id': self.current_session_id,
+                **context
+            }
+        )

@@ -6,11 +6,14 @@ Provides standardized logger creation with:
 - Structured logging support
 - Performance optimized with caching
 - Trading-specific logger types
+- Paper/Live trading mode support
+- Unified trading logger integration
 """
 
 import logging
 import sys
-from typing import Dict, Any, Optional
+import os
+from typing import Dict, Any, Optional, Union
 from functools import lru_cache
 from datetime import datetime
 
@@ -22,26 +25,39 @@ except ImportError:
     STRUCTLOG_AVAILABLE = False
     structlog = None
 
+# Import trading logger types
+try:
+    from src.utils.trading_logger import UnifiedTradingLogger, TradingMode
+    TRADING_LOGGER_AVAILABLE = True
+except ImportError:
+    TRADING_LOGGER_AVAILABLE = False
+    UnifiedTradingLogger = None
+    TradingMode = None
+
 
 class LoggerFactory:
     """
     Centralized factory for creating and managing loggers.
 
     Provides consistent logger configuration across the application
-    with support for structured logging when available.
+    with support for structured logging and trading-specific features.
     """
 
     _initialized = False
     _log_level = logging.INFO
     _log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     _logger_cache: Dict[str, Any] = {}
+    _trading_mode: Optional[str] = None
+    _paper_trading: bool = False
 
     @classmethod
     def initialize(
         cls,
         log_level: int = logging.INFO,
         log_format: Optional[str] = None,
-        enable_structured: bool = True
+        enable_structured: bool = True,
+        trading_mode: Optional[str] = None,
+        paper_trading: Optional[bool] = None
     ) -> None:
         """
         Initialize the logger factory with global settings.
@@ -50,6 +66,8 @@ class LoggerFactory:
             log_level: Default logging level
             log_format: Log message format string
             enable_structured: Whether to use structured logging if available
+            trading_mode: Trading mode (paper/live/demo)
+            paper_trading: Enable paper trading mode (auto-detect if None)
         """
         if cls._initialized:
             return
@@ -57,6 +75,19 @@ class LoggerFactory:
         cls._log_level = log_level
         if log_format:
             cls._log_format = log_format
+
+        # Set trading mode configuration
+        cls._trading_mode = trading_mode or os.getenv('TRADING_MODE', 'paper')
+
+        # Auto-detect paper trading mode
+        if paper_trading is None:
+            cls._paper_trading = (
+                cls._trading_mode in ['paper', 'demo'] or
+                os.getenv('PAPER_TRADING', 'true').lower() == 'true' or
+                os.getenv('TESTNET', 'true').lower() == 'true'
+            )
+        else:
+            cls._paper_trading = paper_trading
 
         # Configure root logger
         logging.basicConfig(
@@ -301,5 +332,210 @@ class LoggerFactory:
             'log_level': cls._log_level,
             'log_format': cls._log_format,
             'structured_logging_available': STRUCTLOG_AVAILABLE,
+            'trading_logger_available': TRADING_LOGGER_AVAILABLE,
+            'trading_mode': cls._trading_mode,
+            'paper_trading': cls._paper_trading,
             'cached_loggers': len(cls._logger_cache)
         }
+
+    # Paper Trading and Unified Trading Logger Methods
+
+    @staticmethod
+    def get_unified_trading_logger(
+        name: str,
+        mode: Optional[str] = None,
+        enable_trade_journal: bool = True,
+        **kwargs
+    ) -> Union['UnifiedTradingLogger', Any]:
+        """
+        Get a unified trading logger with enhanced features.
+
+        Args:
+            name: Logger name
+            mode: Trading mode (paper/live/demo) - auto-detect if None
+            enable_trade_journal: Enable trade journal recording
+            **kwargs: Additional arguments for UnifiedTradingLogger
+
+        Returns:
+            UnifiedTradingLogger instance or fallback logger
+        """
+        if not LoggerFactory._initialized:
+            LoggerFactory.initialize()
+
+        if not TRADING_LOGGER_AVAILABLE:
+            # Fallback to regular trading logger
+            return LoggerFactory.get_trading_logger("trading", name)
+
+        # Auto-detect mode
+        if mode is None:
+            mode = LoggerFactory._trading_mode or 'paper'
+
+        # Convert string mode to TradingMode enum
+        try:
+            if mode == 'paper':
+                trading_mode = TradingMode.PAPER
+            elif mode == 'live':
+                trading_mode = TradingMode.LIVE
+            elif mode == 'demo':
+                trading_mode = TradingMode.DEMO
+            elif mode == 'backtest':
+                trading_mode = TradingMode.BACKTEST
+            else:
+                trading_mode = TradingMode.PAPER
+        except:
+            trading_mode = TradingMode.PAPER
+
+        # Set appropriate log level based on mode
+        if 'log_level' not in kwargs:
+            kwargs['log_level'] = 'DEBUG' if LoggerFactory._paper_trading else 'INFO'
+
+        return UnifiedTradingLogger(
+            name=name,
+            mode=trading_mode,
+            enable_trade_journal=enable_trade_journal,
+            **kwargs
+        )
+
+    @staticmethod
+    def get_paper_trading_logger(
+        name: str,
+        enable_debug: bool = True,
+        **kwargs
+    ) -> Union['UnifiedTradingLogger', Any]:
+        """
+        Get a paper trading logger with optimal settings.
+
+        Args:
+            name: Logger name
+            enable_debug: Enable debug-level logging
+            **kwargs: Additional arguments
+
+        Returns:
+            Configured paper trading logger
+        """
+        return LoggerFactory.get_unified_trading_logger(
+            name=name,
+            mode='paper',
+            log_level='DEBUG' if enable_debug else 'INFO',
+            enable_trade_journal=True,
+            enable_performance_tracking=True,
+            enable_compliance_logging=False,
+            **kwargs
+        )
+
+    @staticmethod
+    def get_live_trading_logger(
+        name: str,
+        enable_compliance: bool = True,
+        **kwargs
+    ) -> Union['UnifiedTradingLogger', Any]:
+        """
+        Get a live trading logger with production settings.
+
+        Args:
+            name: Logger name
+            enable_compliance: Enable compliance logging
+            **kwargs: Additional arguments
+
+        Returns:
+            Configured live trading logger
+        """
+        return LoggerFactory.get_unified_trading_logger(
+            name=name,
+            mode='live',
+            log_level='INFO',
+            enable_trade_journal=True,
+            enable_performance_tracking=True,
+            enable_compliance_logging=enable_compliance,
+            **kwargs
+        )
+
+    @staticmethod
+    def get_component_trading_logger(
+        component: str,
+        symbol: Optional[str] = None,
+        strategy: Optional[str] = None,
+        **kwargs
+    ) -> Union['UnifiedTradingLogger', Any]:
+        """
+        Get a component-specific trading logger with automatic context.
+
+        Args:
+            component: Component name (e.g., 'strategy', 'execution', 'risk')
+            symbol: Trading symbol
+            strategy: Strategy name
+            **kwargs: Additional arguments
+
+        Returns:
+            Component-specific trading logger
+        """
+        if not LoggerFactory._initialized:
+            LoggerFactory.initialize()
+
+        # Generate logger name
+        logger_name = f"{component}"
+        if strategy:
+            logger_name += f"_{strategy}"
+        if symbol:
+            logger_name += f"_{symbol}"
+
+        # Create logger
+        logger = LoggerFactory.get_unified_trading_logger(
+            name=logger_name,
+            **kwargs
+        )
+
+        # Add persistent context if available
+        if hasattr(logger, 'base_logger') and hasattr(logger.base_logger, 'set_context'):
+            context = {
+                'component': component,
+                'timestamp': datetime.now().isoformat()
+            }
+            if symbol:
+                context['symbol'] = symbol
+            if strategy:
+                context['strategy'] = strategy
+
+            logger.base_logger.set_context(**context)
+
+        return logger
+
+    @classmethod
+    def set_trading_mode(cls, mode: str, paper_trading: Optional[bool] = None):
+        """
+        Update trading mode configuration.
+
+        Args:
+            mode: Trading mode (paper/live/demo)
+            paper_trading: Override paper trading detection
+        """
+        cls._trading_mode = mode
+
+        if paper_trading is None:
+            cls._paper_trading = mode in ['paper', 'demo']
+        else:
+            cls._paper_trading = paper_trading
+
+    @classmethod
+    def is_paper_trading(cls) -> bool:
+        """
+        Check if currently in paper trading mode.
+
+        Returns:
+            True if paper trading mode is enabled
+        """
+        if not cls._initialized:
+            cls.initialize()
+        return cls._paper_trading
+
+    @classmethod
+    def get_trading_mode(cls) -> str:
+        """
+        Get current trading mode.
+
+        Returns:
+            Current trading mode string
+        """
+        if not cls._initialized:
+            cls.initialize()
+        return cls._trading_mode or 'paper'

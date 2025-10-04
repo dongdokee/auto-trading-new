@@ -7,6 +7,14 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Callable, Any
 from collections import defaultdict
 from src.execution.models import Order, OrderSide
+from src.core.patterns import LoggerFactory
+
+# Import enhanced logging if available
+try:
+    from src.utils.trading_logger import TradingMode, LogCategory
+    ENHANCED_LOGGING_AVAILABLE = True
+except ImportError:
+    ENHANCED_LOGGING_AVAILABLE = False
 
 
 @dataclass
@@ -46,6 +54,54 @@ class SlippageController:
         self.monitoring_callback: Optional[Callable] = None
         self._lock = asyncio.Lock()
 
+        # Enhanced logging setup
+        self._setup_enhanced_logging()
+
+        # Trading session tracking
+        self.current_session_id = None
+        self.current_correlation_id = None
+
+    def _setup_enhanced_logging(self):
+        """Setup enhanced logging for slippage controller"""
+        if ENHANCED_LOGGING_AVAILABLE:
+            # Use enhanced logger factory for execution engine
+            self.logger = LoggerFactory.get_component_trading_logger(
+                component="execution_engine",
+                strategy="slippage_controller"
+            )
+        else:
+            # Fallback to standard logging
+            self.logger = LoggerFactory.get_execution_logger()
+
+        # Setup logging methods
+        self._setup_logging_methods()
+
+    def _setup_logging_methods(self):
+        """Setup enhanced logging methods"""
+        if hasattr(self.logger, 'log_execution'):
+            # Enhanced logger available
+            self.log_slippage_measurement = self._enhanced_log_slippage_measurement
+            self.log_slippage_alert = self._enhanced_log_slippage_alert
+            self.log_slippage_analysis = self._enhanced_log_slippage_analysis
+        else:
+            # Standard logger - use basic methods
+            self.log_slippage_measurement = self._basic_log_slippage_measurement
+            self.log_slippage_alert = self._basic_log_slippage_alert
+            self.log_slippage_analysis = self._basic_log_slippage_analysis
+
+    def set_trading_session(self, session_id: str, correlation_id: str = None):
+        """Set trading session context for logging"""
+        self.current_session_id = session_id
+        self.current_correlation_id = correlation_id
+
+        # Update logger context if enhanced logging is available
+        if hasattr(self.logger, 'base_logger') and hasattr(self.logger.base_logger, 'set_context'):
+            self.logger.base_logger.set_context(
+                session_id=session_id,
+                correlation_id=correlation_id,
+                component="execution_engine"
+            )
+
     def calculate_slippage(self, benchmark_price: Decimal, execution_price: Decimal, side: OrderSide) -> Decimal:
         """Calculate slippage in basis points"""
         if side == OrderSide.BUY:
@@ -79,6 +135,15 @@ class SlippageController:
             # Add to history
             self.slippage_history.append(metrics)
 
+            # Log slippage measurement
+            self.log_slippage_measurement(
+                metrics=metrics,
+                order=order,
+                benchmark_price=benchmark_price,
+                execution_price=execution_price,
+                filled_qty=filled_qty
+            )
+
             # Check for alerts
             await self._check_slippage_alerts(metrics, order)
 
@@ -110,6 +175,13 @@ class SlippageController:
         )
 
         self.active_alerts.append(alert)
+
+        # Log slippage alert
+        self.log_slippage_alert(
+            alert=alert,
+            metrics=metrics,
+            order=order
+        )
 
     async def check_slippage_limit(self, order: Order, benchmark_price: Decimal,
                                  proposed_price: Decimal) -> bool:
@@ -289,3 +361,128 @@ class SlippageController:
                 for alert in filtered_alerts
             ]
         }
+
+    # Enhanced Logging Methods
+
+    def _enhanced_log_slippage_measurement(self, metrics: SlippageMetrics, order: Order,
+                                          benchmark_price: Decimal, execution_price: Decimal, filled_qty: Decimal, **context):
+        """Log slippage measurement using enhanced logger"""
+        try:
+            self.logger.log_execution(
+                message=f"Slippage recorded: {metrics.slippage_bps:.1f}bps on {order.symbol}",
+                order_id=metrics.order_id,
+                symbol=order.symbol,
+                slippage_bps=float(metrics.slippage_bps),
+                cost_impact=float(metrics.cost_impact),
+                benchmark_price=float(benchmark_price),
+                execution_price=float(execution_price),
+                filled_quantity=float(filled_qty),
+                order_side=order.side.value,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                timestamp=metrics.timestamp.isoformat(),
+                slippage_type=getattr(metrics, 'slippage_type', 'unknown'),
+                is_within_limit=metrics.slippage_bps <= self.max_slippage_bps,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced slippage measurement logging failed: {e}")
+            self._basic_log_slippage_measurement(metrics, order, benchmark_price, execution_price, filled_qty, **context)
+
+    def _basic_log_slippage_measurement(self, metrics: SlippageMetrics, order: Order,
+                                       benchmark_price: Decimal, execution_price: Decimal, filled_qty: Decimal, **context):
+        """Log slippage measurement using basic logger"""
+        direction = "▲" if metrics.slippage_bps > 0 else "▼"
+        severity = "HIGH" if metrics.slippage_bps > self.alert_threshold_bps else "NORMAL"
+
+        self.logger.info(
+            f"[SlippageController] {direction} {metrics.slippage_bps:.1f}bps on {order.symbol} "
+            f"({order.side.value} {filled_qty} @ {execution_price} vs {benchmark_price}) [{severity}]",
+            extra={
+                'order_id': metrics.order_id,
+                'symbol': order.symbol,
+                'slippage_bps': float(metrics.slippage_bps),
+                'cost_impact': float(metrics.cost_impact),
+                'benchmark_price': float(benchmark_price),
+                'execution_price': float(execution_price),
+                'filled_quantity': float(filled_qty),
+                'order_side': order.side.value,
+                'severity': severity,
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_slippage_alert(self, alert: SlippageAlert, metrics: SlippageMetrics, order: Order, **context):
+        """Log slippage alert using enhanced logger"""
+        try:
+            self.logger.log_alert(
+                message=alert.message,
+                alert_type="slippage_threshold",
+                severity=alert.severity,
+                order_id=alert.order_id,
+                symbol=alert.symbol,
+                slippage_bps=float(alert.slippage_bps),
+                threshold_bps=self.alert_threshold_bps,
+                max_limit_bps=self.max_slippage_bps,
+                cost_impact=float(metrics.cost_impact),
+                order_side=order.side.value,
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                timestamp=alert.timestamp.isoformat(),
+                requires_attention=alert.severity in ['CRITICAL', 'HIGH'],
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced slippage alert logging failed: {e}")
+            self._basic_log_slippage_alert(alert, metrics, order, **context)
+
+    def _basic_log_slippage_alert(self, alert: SlippageAlert, metrics: SlippageMetrics, order: Order, **context):
+        """Log slippage alert using basic logger"""
+        log_method = self.logger.critical if alert.severity == 'CRITICAL' else \
+                    self.logger.warning if alert.severity == 'HIGH' else \
+                    self.logger.info
+
+        log_method(
+            f"[SlippageController] {alert.severity} ALERT: {alert.message} "
+            f"(cost: {metrics.cost_impact:.4f})",
+            extra={
+                'alert_type': 'slippage_threshold',
+                'severity': alert.severity,
+                'order_id': alert.order_id,
+                'symbol': alert.symbol,
+                'slippage_bps': float(alert.slippage_bps),
+                'threshold_bps': self.alert_threshold_bps,
+                'cost_impact': float(metrics.cost_impact),
+                'order_side': order.side.value,
+                'session_id': self.current_session_id,
+                **context
+            }
+        )
+
+    def _enhanced_log_slippage_analysis(self, analysis_type: str, data: Dict[str, Any], **context):
+        """Log slippage analysis using enhanced logger"""
+        try:
+            self.logger.log_analysis(
+                message=f"Slippage analysis: {analysis_type}",
+                analysis_type=f"slippage_{analysis_type}",
+                session_id=self.current_session_id,
+                correlation_id=self.current_correlation_id,
+                **data,
+                **context
+            )
+        except Exception as e:
+            self.logger.error(f"Enhanced slippage analysis logging failed: {e}")
+            self._basic_log_slippage_analysis(analysis_type, data, **context)
+
+    def _basic_log_slippage_analysis(self, analysis_type: str, data: Dict[str, Any], **context):
+        """Log slippage analysis using basic logger"""
+        self.logger.info(
+            f"[SlippageController] Analysis: {analysis_type} - {data}",
+            extra={
+                'analysis_type': f"slippage_{analysis_type}",
+                'analysis_data': data,
+                'session_id': self.current_session_id,
+                **context
+            }
+        )

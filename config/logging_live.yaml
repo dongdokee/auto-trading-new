@@ -1,0 +1,291 @@
+# Live Trading Logging Configuration
+# Optimized for production trading with regulatory compliance
+
+# Global logging settings
+logging:
+  level: INFO  # Production level
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  enable_structured: true
+
+  # Live trading specific settings
+  mode: live
+  paper_trading: false
+  testnet: false
+
+  # File logging configuration - Production settings
+  file_logging:
+    enabled: true
+    log_dir: "logs/live_trading"
+    max_file_size: 100MB  # Larger files for production
+    backup_count: 20      # More backups for compliance
+    compression: true
+
+    # Separate log files by category with compliance focus
+    separate_files:
+      trade_journal: "trade_journal.log"
+      compliance: "compliance.log"
+      audit_trail: "audit_trail.log"
+      execution: "execution.log"
+      risk_management: "risk_management.log"
+      system: "system.log"
+      errors: "errors.log"
+      security: "security.log"
+
+# Trading-specific logging configuration
+trading_logging:
+  # Unified trading logger settings
+  unified_logger:
+    enabled: true
+    enable_trade_journal: true
+    enable_performance_tracking: true
+    enable_compliance_logging: true   # Critical for live trading
+    correlation_tracking: true
+
+  # Trade journal configuration
+  trade_journal:
+    database_path: "data/live_trading_journal.db"
+    auto_create_tables: true
+    enable_analytics: true
+    export_formats: ["csv", "json"]  # No HTML for production
+    backup_database: true
+
+  # Performance analytics configuration
+  performance_analytics:
+    enabled: true
+    real_time_calculation: true
+    benchmark_symbol: "BTCUSDT"
+    enable_comparison: false  # Focus on live performance
+    cache_results: true
+    report_generation:
+      auto_generate: true
+      formats: ["json"]  # Structured format only
+      schedule: "hourly"
+
+# Component-specific logging levels - Production optimized
+components:
+  strategy_engine:
+    level: INFO  # Less verbose for production
+    features:
+      signal_generation: true
+      market_regime_detection: true
+      confidence_tracking: true
+      strategy_allocation: true
+      performance_attribution: true
+      detailed_reasoning: false  # Disable for performance
+
+  execution_engine:
+    level: INFO
+    features:
+      order_lifecycle: true
+      execution_algorithms: true
+      slippage_tracking: true
+      latency_measurement: true
+      fill_simulation: false      # Not needed for live
+      market_impact_modeling: true
+
+  risk_management:
+    level: WARNING  # Only important risk events
+    features:
+      position_sizing: true
+      risk_calculations: true
+      limit_monitoring: true
+      drawdown_tracking: true
+      var_calculation: true
+      stress_testing: false  # CPU intensive
+
+  portfolio_management:
+    level: INFO
+    features:
+      optimization_process: true
+      rebalancing_decisions: true
+      performance_attribution: true
+      allocation_changes: true
+      transaction_costs: true
+
+  market_data:
+    level: WARNING  # Only issues and anomalies
+    features:
+      data_quality_checks: true
+      anomaly_detection: true
+      latency_tracking: true
+      websocket_status: true
+      orderbook_analysis: false  # CPU intensive
+
+  api_integration:
+    level: INFO
+    features:
+      request_response_logging: false  # Sensitive in production
+      rate_limit_tracking: true
+      connection_status: true
+      error_recovery: true
+      testnet_validation: false
+
+# Advanced features - Production focused
+advanced_features:
+  # Market condition logging
+  market_conditions:
+    enabled: true
+    log_regime_changes: true
+    volatility_tracking: true
+    liquidity_analysis: false  # CPU intensive
+    news_impact_detection: false
+
+  # Validation and compliance
+  validation:
+    enabled: true
+    backtest_comparison: false
+    real_time_validation: true
+    drift_detection: true
+
+  # Debugging - Limited for production
+  debugging:
+    enabled: false  # Disable for production performance
+    verbose_error_logging: false
+    stack_trace_logging: true   # Keep for error diagnosis
+    memory_usage_tracking: true
+    performance_profiling: false
+
+  # Analytics - Production optimized
+  analytics:
+    enabled: true
+    real_time_metrics: true
+    correlation_analysis: false  # CPU intensive
+    pattern_recognition: false
+    ml_model_tracking: false
+
+# Compliance and regulatory logging
+compliance:
+  enabled: true
+
+  # Audit trail requirements
+  audit_trail:
+    log_all_orders: true
+    log_position_changes: true
+    log_risk_overrides: true
+    log_manual_interventions: true
+    log_parameter_changes: true
+    log_system_access: true
+
+  # Regulatory reporting
+  regulatory_reporting:
+    enabled: true
+    transaction_reporting: true
+    position_reporting: true
+    risk_reporting: true
+
+  # Data protection
+  data_protection:
+    mask_sensitive_data: true
+    encrypt_logs: true
+    log_access_control: true
+
+# Security logging
+security:
+  enabled: true
+
+  # Access logging
+  access_control:
+    log_api_access: true
+    log_failed_authentication: true
+    log_privilege_escalation: true
+    log_configuration_changes: true
+
+  # Security events
+  security_events:
+    suspicious_activity: true
+    rate_limit_violations: true
+    unauthorized_access_attempts: true
+
+# Alerting configuration for live trading
+alerting:
+  enabled: true
+  channels:
+    console: false     # Disable console alerts in production
+    file: true
+    webhook: true      # Enable webhook notifications
+    email: true        # Enable email alerts
+
+  alert_levels:
+    strategy_signal: WARNING     # Only significant signals
+    execution_event: INFO
+    risk_violation: CRITICAL     # Immediate attention
+    system_error: CRITICAL
+    performance_milestone: INFO
+    compliance_violation: CRITICAL
+
+  # Live trading specific alerts
+  live_trading_alerts:
+    large_position_changes: true
+    risk_limit_breaches: true
+    system_performance_degradation: true
+    api_connectivity_issues: true
+    unusual_market_conditions: true
+
+# Data retention policy - Compliance focused
+retention:
+  # Compliance requirements
+  log_files:
+    keep_days: 2555    # 7 years for regulatory compliance
+    archive_after_days: 365
+
+  trade_journal:
+    keep_days: 2555    # 7 years for audit trail
+
+  performance_data:
+    keep_days: 1825    # 5 years
+
+  debug_logs:
+    keep_days: 90      # Short retention for debug
+
+  compliance_logs:
+    keep_days: 2555    # 7 years mandatory
+
+# Integration settings - Production
+integrations:
+  # Database integration
+  database:
+    auto_create_schemas: false  # Manual schema management
+    enable_metrics_table: true
+    enable_backup: true
+
+  # Monitoring integration
+  monitoring:
+    enable_health_checks: true
+    metrics_collection: true
+    external_monitoring: true
+
+  # Export integration
+  exports:
+    auto_export_daily: true
+    export_formats: ["json"]    # Structured only
+    export_path: "exports/live_trading"
+    encrypt_exports: true
+
+# Performance optimization
+performance:
+  # Logging optimization
+  async_logging: true
+  batch_logging: true
+  compression: true
+
+  # Resource limits
+  max_log_queue_size: 10000
+  max_memory_usage_mb: 500
+  log_rotation_on_size: true
+
+# Environment-specific overrides
+environment_overrides:
+  production:
+    logging.level: WARNING
+    advanced_features.debugging.enabled: false
+    alerting.channels.console: false
+
+  staging:
+    logging.level: INFO
+    compliance.audit_trail.enabled: true
+    retention.log_files.keep_days: 90
+
+  development:
+    logging.level: DEBUG
+    compliance.enabled: false
+    security.enabled: false
