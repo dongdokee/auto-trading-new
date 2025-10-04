@@ -7,7 +7,7 @@ from datetime import datetime
 
 from .data_aggregator import DataAggregator
 from .models import MarketMetrics, MicrostructurePatterns
-from ..execution.market_analyzer import MarketConditionAnalyzer as BaseMarketAnalyzer
+from src.execution.market_analyzer import MarketConditionAnalyzer as BaseMarketAnalyzer
 
 
 class EnhancedMarketConditionAnalyzer:

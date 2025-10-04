@@ -14,9 +14,9 @@ from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass
 from enum import Enum
 
-from ..events.event_bus import EventBus
-from ..events.models import SystemEvent, RiskEvent, EventPriority
-from ..state.manager import StateManager
+from src.integration.events.event_bus import EventBus
+from src.integration.events.models import SystemEvent, RiskEvent, EventPriority
+from src.integration.state.manager import StateManager
 from .alerts import AlertManager
 from .metrics import MetricsCollector
 

@@ -5,8 +5,8 @@ Trading Orchestrator Event Handlers
 Handles all event types for the orchestration workflow.
 """
 
-from ..events.handlers import BaseEventHandler, HandlerResult
-from ..events.models import BaseEvent, EventType, PortfolioEvent
+from src.integration.events.handlers import BaseEventHandler, HandlerResult
+from src.integration.events.models import BaseEvent, EventType, PortfolioEvent
 
 
 class HandlerManager:

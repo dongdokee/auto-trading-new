@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Dict, List
 from dataclasses import dataclass
 
-from ..models import Order
+from src.execution.models import Order
 
 
 @dataclass

@@ -9,7 +9,7 @@ and portfolio rebalancing.
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from ..events.models import RiskEvent, PortfolioEvent, SystemEvent
+from src.integration.events.models import RiskEvent, PortfolioEvent, SystemEvent
 from .models import TradingState
 
 

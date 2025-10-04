@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from dataclasses import dataclass
 
-from ..models import Order, OrderSide
+from src.execution.models import Order, OrderSide
 
 
 @dataclass

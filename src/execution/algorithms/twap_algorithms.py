@@ -5,7 +5,7 @@ from typing import Dict
 from datetime import datetime
 
 from .base import BaseExecutionAlgorithm
-from ..models import Order, OrderSide, OrderUrgency
+from src.execution.models import Order, OrderSide, OrderUrgency
 
 
 class TWAPAlgorithm(BaseExecutionAlgorithm):

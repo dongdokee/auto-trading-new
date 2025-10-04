@@ -12,13 +12,13 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from decimal import Decimal
 
-from ..events.event_bus import EventBus
-from ..events.models import (
+from src.integration.events.event_bus import EventBus
+from src.integration.events.models import (
     RiskEvent, OrderEvent, ExecutionEvent, PortfolioEvent, SystemEvent,
     EventType, EventPriority
 )
-from ..events.handlers import BaseEventHandler, HandlerResult
-from ..state.manager import StateManager
+from src.integration.events.handlers import BaseEventHandler, HandlerResult
+from src.integration.state.manager import StateManager
 
 # Import risk management components
 from src.risk_management.risk_management import RiskController

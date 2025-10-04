@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional, List
 from decimal import Decimal
 from datetime import datetime
 
-from ..api.binance.websocket import BinanceWebSocket
+from src.api.binance.websocket import BinanceWebSocket
 from .models import OrderBookSnapshot, TickData, TickType, OrderSide, OrderLevel
 from .data_aggregator import DataAggregator
 

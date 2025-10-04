@@ -12,12 +12,12 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from decimal import Decimal
 
-from ..events.event_bus import EventBus
-from ..events.models import (
+from src.integration.events.event_bus import EventBus
+from src.integration.events.models import (
     MarketDataEvent, StrategySignalEvent, SystemEvent,
     EventType, EventPriority
 )
-from ..events.handlers import BaseEventHandler, HandlerResult
+from src.integration.events.handlers import BaseEventHandler, HandlerResult
 
 # Import strategy engine components
 from src.strategy_engine.strategy_manager import StrategyManager

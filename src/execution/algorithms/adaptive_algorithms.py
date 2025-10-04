@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Dict
 
 from .base import BaseExecutionAlgorithm
-from ..models import Order, OrderSide
+from src.execution.models import Order, OrderSide
 
 
 class SignalCalculator:

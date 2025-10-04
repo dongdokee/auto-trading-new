@@ -13,13 +13,13 @@ from typing import Dict, List, Optional, Any
 from decimal import Decimal
 import uuid
 
-from ..events.event_bus import EventBus
-from ..events.models import (
+from src.integration.events.event_bus import EventBus
+from src.integration.events.models import (
     OrderEvent, ExecutionEvent, SystemEvent, RiskEvent,
     EventType, EventPriority
 )
-from ..events.handlers import BaseEventHandler, HandlerResult
-from ..state.manager import StateManager
+from src.integration.events.handlers import BaseEventHandler, HandlerResult
+from src.integration.state.manager import StateManager
 
 # Import execution engine components
 from src.execution.order_router import SmartOrderRouter

@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, Tuple, Optional
 
-from ..base_strategy import BaseStrategy, StrategySignal, StrategyConfig
+from src.strategy_engine.base_strategy import BaseStrategy, StrategySignal, StrategyConfig
 
 
 class RangeTradingStrategy(BaseStrategy):

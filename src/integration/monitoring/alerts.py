@@ -13,8 +13,8 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import json
 
-from ..events.event_bus import EventBus
-from ..events.models import SystemEvent, RiskEvent, EventPriority
+from src.integration.events.event_bus import EventBus
+from src.integration.events.models import SystemEvent, RiskEvent, EventPriority
 
 
 class AlertSeverity(Enum):

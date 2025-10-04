@@ -7,8 +7,8 @@ from typing import List, Optional
 from datetime import datetime
 from decimal import Decimal
 
-from .base import BaseRepository, RepositoryError
-from ..schemas.trading_schemas import Position, Trade, Order, MarketData
+from src.core.database.repository.base import BaseRepository, RepositoryError
+from src.core.database.schemas.trading_schemas import Position, Trade, Order, MarketData
 
 
 class PositionRepository(BaseRepository[Position]):

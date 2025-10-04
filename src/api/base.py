@@ -9,7 +9,7 @@ import asyncio
 import time
 import warnings
 
-from src.execution.models import Order, OrderSide, OrderUrgency
+from src.core.models import Order, OrderSide, OrderUrgency
 from src.core.patterns import BaseConnectionManager, LoggerFactory
 
 # Keep old ConnectionError for backward compatibility

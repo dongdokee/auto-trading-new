@@ -6,7 +6,7 @@ Handles system lifecycle operations including start, stop, pause, resume, and em
 """
 
 import logging
-from ..events.models import SystemEvent, OrderEvent, EventPriority
+from src.integration.events.models import SystemEvent, OrderEvent, EventPriority
 from .models import TradingState
 
 
