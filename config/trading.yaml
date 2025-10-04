@@ -1,0 +1,286 @@
+# Trading Configuration for Binance Testnet Paper Trading
+# Binance 테스트넷 모의매매를 위한 트레이딩 설정
+
+system:
+  name: "AutoTrading Paper Trading System"
+  version: "1.0.0"
+  environment: "paper_trading"  # paper_trading, development, staging, production
+
+# Trading mode and basic settings
+trading:
+  mode: "paper"  # paper, live
+  base_currency: "USDT"
+  trading_pairs:
+    - "BTC/USDT"
+    - "ETH/USDT"
+    - "BNB/USDT"
+    - "ADA/USDT"
+    - "SOL/USDT"
+
+  execution:
+    max_orders_per_second: 5
+    order_timeout_seconds: 30
+    retry_attempts: 3
+    slippage_tolerance: 0.002  # 0.2%
+
+# Paper Trading Specific Configuration
+paper_trading:
+  enabled: true
+  initial_balance: 100000.0  # Starting with $100,000
+  commission_rate: 0.001     # 0.1% commission rate
+
+  # Slippage simulation
+  slippage_simulation: true
+  max_slippage: 0.002        # Maximum 0.2% slippage
+
+  # Latency simulation
+  latency_simulation: true
+  min_latency_ms: 10         # Minimum 10ms latency
+  max_latency_ms: 50         # Maximum 50ms latency
+
+  # Reporting
+  report_interval_minutes: 15  # Generate report every 15 minutes
+
+  # Safety features
+  max_position_size_pct: 0.1   # Maximum 10% of balance per position
+  max_daily_trades: 50         # Maximum trades per day
+  max_daily_loss_pct: 0.05     # Stop trading if daily loss exceeds 5%
+
+# Exchange Configuration - Binance Testnet
+exchanges:
+  binance:
+    name: "BINANCE"
+    api_key: "${BINANCE_TESTNET_API_KEY}"
+    api_secret: "${BINANCE_TESTNET_API_SECRET}"
+    testnet: true              # Always true for paper trading
+    paper_trading: true        # Enable paper trading mode
+    rate_limit: 1200          # Requests per minute
+    timeout: 30               # Request timeout in seconds
+
+    # Testnet endpoints (automatically used when testnet=true)
+    testnet_base_url: "https://testnet.binancefuture.com"
+    testnet_websocket_url: "wss://stream.binancefuture.com"
+
+# Strategy Configuration
+strategies:
+  momentum:
+    enabled: true
+    allocation: 0.3           # 30% allocation
+    timeframe: "5m"
+    parameters:
+      lookback_period: 20
+      momentum_threshold: 0.02
+
+  mean_reversion:
+    enabled: true
+    allocation: 0.3           # 30% allocation
+    timeframe: "15m"
+    parameters:
+      lookback_period: 50
+      deviation_threshold: 2.0
+
+  breakout:
+    enabled: true
+    allocation: 0.4           # 40% allocation
+    timeframe: "1h"
+    parameters:
+      lookback_period: 24
+      volume_threshold: 1.5
+
+# Risk Management Configuration
+risk_management:
+  enabled: true
+
+  # Position limits
+  max_portfolio_risk: 0.05    # Maximum 5% portfolio risk
+  max_position_size: 0.1      # Maximum 10% per position
+  max_correlation_exposure: 0.3  # Maximum 30% in correlated assets
+
+  # Stop loss and take profit
+  default_stop_loss_pct: 0.02   # 2% stop loss
+  default_take_profit_pct: 0.04 # 4% take profit
+
+  # Paper trading specific
+  paper_trading_multiplier: 1.0  # No size reduction for paper trading
+
+  # Daily limits
+  max_daily_loss: 0.05          # 5% max daily loss
+  max_daily_trades: 50          # Maximum trades per day
+
+# Portfolio Management
+portfolio:
+  rebalance_frequency: "daily"
+  target_volatility: 0.15      # 15% target volatility
+  max_drawdown: 0.1            # 10% maximum drawdown
+
+  # Optimization settings
+  optimization_method: "markowitz"  # markowitz, equal_weight, risk_parity
+  lookback_days: 60
+  min_weight: 0.0
+  max_weight: 0.4
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # File logging
+  file_handler:
+    enabled: true
+    filename: "logs/paper_trading.log"
+    max_file_size: "10MB"
+    backup_count: 5
+
+  # Database logging
+  db_handler:
+    enabled: true
+    table_prefix: "paper_trading"
+
+  # Console logging
+  console_handler:
+    enabled: true
+    colored_output: true
+
+# Database Configuration (for logging and state persistence)
+database:
+  # SQLite for simple paper trading (no external DB required)
+  sqlite:
+    enabled: true
+    path: "data/paper_trading.db"
+
+  # PostgreSQL (optional - if you want advanced analytics)
+  postgresql:
+    enabled: false
+    host: "${POSTGRES_HOST:localhost}"
+    port: "${POSTGRES_PORT:5432}"
+    database: "${POSTGRES_DB:paper_trading}"
+    user: "${POSTGRES_USER}"
+    password: "${POSTGRES_PASSWORD}"
+
+  # Redis (optional - for caching)
+  redis:
+    enabled: false
+    host: "${REDIS_HOST:localhost}"
+    port: "${REDIS_PORT:6379}"
+    db: 1  # Use different DB for paper trading
+
+# Monitoring and Alerts
+monitoring:
+  enabled: true
+
+  # Performance monitoring
+  track_performance: true
+  performance_window_minutes: 60  # Track performance over 1-hour windows
+
+  # Alerts
+  alerts:
+    enabled: true
+
+    # Performance alerts
+    daily_loss_threshold: 0.03    # Alert if daily loss > 3%
+    drawdown_threshold: 0.05      # Alert if drawdown > 5%
+
+    # System alerts
+    connection_failure: true      # Alert on connection failures
+    order_failure: true          # Alert on order failures
+
+    # Webhook for alerts (optional)
+    webhook_url: "${ALERT_WEBHOOK_URL:}"
+
+  # Health check
+  healthcheck:
+    enabled: true
+    port: 8080
+    interval: 30  # seconds
+
+# Market Data Configuration
+market_data:
+  # Real-time data sources
+  sources:
+    - "binance_websocket"
+
+  # Data storage
+  store_data: true
+  storage_duration_days: 30
+
+  # Update frequencies
+  orderbook_update_ms: 100     # 100ms orderbook updates
+  trade_update_ms: 10          # 10ms trade updates
+  kline_intervals:
+    - "1m"
+    - "5m"
+    - "15m"
+    - "1h"
+
+# Backtesting Configuration (for strategy validation)
+backtesting:
+  enabled: true
+
+  # Data range
+  start_date: "2024-01-01"
+  end_date: "2024-12-31"
+
+  # Simulation parameters
+  initial_capital: 100000.0
+  commission_rate: 0.001
+  slippage_rate: 0.001
+
+  # Benchmark
+  benchmark: "BTC/USDT"  # Compare performance to BTC
+
+# API Rate Limiting
+rate_limiting:
+  enabled: true
+
+  # Binance limits
+  binance_requests_per_minute: 1200
+  binance_orders_per_10s: 300
+  binance_orders_per_day: 200000
+
+  # Safety margins
+  use_safety_margin: true
+  safety_margin_pct: 0.8      # Use 80% of allowed limits
+
+# Security Settings
+security:
+  # API key validation
+  validate_api_keys: true
+
+  # Testnet validation
+  enforce_testnet_mode: true   # Prevent accidental live trading
+
+  # Logging security
+  mask_sensitive_data: true   # Mask API keys in logs
+  log_api_calls: false       # Don't log API call details
+
+# Development and Testing
+development:
+  # Debug settings
+  debug_mode: false
+  verbose_logging: false
+
+  # Testing
+  enable_test_mode: false
+  mock_market_data: false
+
+  # Performance testing
+  enable_profiling: false
+  profile_output_dir: "profiling"
+
+# Notification Settings
+notifications:
+  enabled: true
+
+  # Channels
+  console: true
+  file: true
+  email: false
+  slack: false
+
+  # Frequency
+  summary_interval_hours: 4    # Send summary every 4 hours
+
+  # Content
+  include_performance: true
+  include_positions: true
+  include_trades: true
