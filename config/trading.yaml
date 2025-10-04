@@ -26,7 +26,7 @@ trading:
 # Paper Trading Specific Configuration
 paper_trading:
   enabled: true
-  initial_balance: 100000.0  # Starting with $100,000
+  initial_balance: 1000.0  # Starting with $100,000
   commission_rate: 0.001     # 0.1% commission rate
 
   # Slippage simulation

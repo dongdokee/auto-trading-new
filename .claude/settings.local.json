@@ -7,7 +7,9 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/test_memory_utils.py -v)",
       "Bash(do echo \"=== $dir ===\")",
       "Bash(grep:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(PYTHONPATH=. \"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" scripts/paper_trading.py)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" simple_paper_trading.py)"
     ],
     "deny": [],
     "ask": []
