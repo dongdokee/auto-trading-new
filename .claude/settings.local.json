@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(\"/c/Users/dongd\\anaconda3/envs/autotrading/python.exe\" -c \"from src.core import IExchangeClient, IStrategy, IRiskController, IOrderManager, IPortfolioManager; print(''Core interfaces imported successfully'')\")"
+      "Bash(\"/c/Users/dongd\\anaconda3/envs/autotrading/python.exe\" -c \"from src.core import IExchangeClient, IStrategy, IRiskController, IOrderManager, IPortfolioManager; print(''Core interfaces imported successfully'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/test_async_utils.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/test_memory_utils.py --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/test_memory_utils.py -v)"
     ],
     "deny": [],
     "ask": []

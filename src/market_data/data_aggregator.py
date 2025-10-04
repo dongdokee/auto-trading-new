@@ -1,9 +1,16 @@
 # src/market_data/data_aggregator.py
+"""
+Phase 8 Optimizations:
+- Stream-based tick processing with generators
+- Memory-efficient circular buffers for data caching
+- Parallel processing for multi-symbol operations
+- Batched callback notifications
+"""
 
 import logging
 import asyncio
 import time
-from typing import Dict, List, Optional, Callable, Any, Set
+from typing import Dict, List, Optional, Callable, Any, Set, AsyncIterator, Iterator
 from decimal import Decimal
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
@@ -18,19 +25,39 @@ from .market_impact import MarketImpactModel
 from .liquidity_profiler import LiquidityProfiler
 from .tick_processor import TickDataAnalyzer
 
+# Phase 8 imports
+from src.core.patterns.async_utils import BatchProcessor, ConcurrentExecutor, process_concurrently
+from src.core.patterns.memory_utils import (
+    StreamProcessor, CircularBuffer, MemoryMonitor, create_stream_processor
+)
+
 
 class DataAggregator:
     """
     Central aggregator for multi-symbol market data processing and caching
+
+    Phase 8 Features:
+    - Stream-based processing for memory efficiency
+    - Parallel multi-symbol operations
+    - Circular buffers for fixed memory usage
+    - Batched callback notifications
     """
 
-    def __init__(self, cache_ttl: int = 60, max_symbols: int = 50):
+    def __init__(self,
+                 cache_ttl: int = 60,
+                 max_symbols: int = 50,
+                 stream_chunk_size: int = 100,
+                 memory_threshold_mb: float = 500.0,
+                 enable_parallel_processing: bool = True):
         self.logger = logging.getLogger(__name__)
 
         # Configuration
         self.cache_ttl = cache_ttl  # seconds
         self.max_symbols = max_symbols
         self.performance_window = 3600  # 1 hour for performance tracking
+        self.stream_chunk_size = stream_chunk_size
+        self.memory_threshold_mb = memory_threshold_mb
+        self.enable_parallel_processing = enable_parallel_processing
 
         # Core analyzers
         self.orderbook_analyzer = OrderBookAnalyzer()
@@ -40,21 +67,53 @@ class DataAggregator:
         # Per-symbol tick analyzers
         self.tick_analyzers: Dict[str, TickDataAnalyzer] = {}
 
-        # Data cache
+        # Data cache with memory-efficient circular buffers
         self.aggregated_data: Dict[str, AggregatedMarketData] = {}
         self.symbol_subscriptions: Set[str] = set()
+
+        # Phase 8: Memory-efficient buffers
+        self.tick_buffer_size = 1000
+        self.orderbook_buffer_size = 500
+
+        # Per-symbol circular buffers for memory efficiency
+        self.tick_buffers: Dict[str, CircularBuffer[TickData]] = {}
+        self.orderbook_buffers: Dict[str, CircularBuffer[OrderBookSnapshot]] = {}
 
         # Callback system
         self.update_callbacks: Dict[str, List[Callable]] = defaultdict(list)
         self.pattern_callbacks: List[Callable] = []
 
-        # Performance tracking
+        # Phase 8: Stream processing utilities
+        self.stream_processor = create_stream_processor(
+            chunk_size=stream_chunk_size,
+            memory_threshold_mb=memory_threshold_mb
+        )
+
+        # Phase 8: Async processing utilities
+        if enable_parallel_processing:
+            self.batch_processor = BatchProcessor(
+                batch_size=20,
+                max_concurrent_batches=3,
+                timeout_seconds=10.0
+            )
+            self.concurrent_executor = ConcurrentExecutor(
+                max_concurrent=30,
+                timeout_seconds=15.0
+            )
+        else:
+            self.batch_processor = None
+            self.concurrent_executor = None
+
+        # Phase 8: Memory monitoring
+        self.memory_monitor = MemoryMonitor(alert_threshold_mb=memory_threshold_mb)
+
+        # Performance tracking with circular buffer
         self.performance_metrics = {
             'processed_orderbooks': 0,
             'processed_ticks': 0,
             'cache_hits': 0,
             'cache_misses': 0,
-            'processing_times': deque(maxlen=1000),
+            'processing_times': CircularBuffer(maxsize=1000),
             'error_count': 0,
             'last_reset': datetime.utcnow()
         }
@@ -97,6 +156,12 @@ class DataAggregator:
 
         self.symbol_subscriptions.add(symbol)
         self.tick_analyzers[symbol] = TickDataAnalyzer()
+
+        # Phase 8: Initialize circular buffers for the symbol
+        self.tick_buffers[symbol] = CircularBuffer(maxsize=self.tick_buffer_size)
+        self.orderbook_buffers[symbol] = CircularBuffer(maxsize=self.orderbook_buffer_size)
+
+        self.logger.info(f"Subscribed to symbol {symbol} with optimized buffers")
 
         # Initialize empty aggregated data
         self.aggregated_data[symbol] = AggregatedMarketData(
@@ -495,3 +560,304 @@ class DataAggregator:
             summary['tick_metrics'] = tick_analyzer.get_real_time_metrics()
 
         return summary
+
+    # Phase 8 Optimization Methods
+
+    async def process_tick_stream(self, tick_stream: AsyncIterator[TickData]) -> AsyncIterator[MicrostructurePatterns]:
+        """
+        Process stream of tick data with memory efficiency
+
+        Args:
+            tick_stream: Async iterator of tick data
+
+        Yields:
+            MicrostructurePatterns: Detected patterns
+        """
+        async def process_tick(tick: TickData) -> Optional[MicrostructurePatterns]:
+            """Process single tick and return patterns if detected"""
+            if tick.symbol not in self.symbol_subscriptions:
+                return None
+
+            try:
+                # Add to circular buffer
+                self.tick_buffers[tick.symbol].append(tick)
+
+                # Process tick through analyzer
+                tick_analyzer = self.tick_analyzers[tick.symbol]
+                patterns = tick_analyzer.process_tick(tick)
+
+                # Update metrics
+                self.performance_metrics['processed_ticks'] += 1
+
+                return patterns if patterns else None
+
+            except Exception as e:
+                self.logger.error(f"Error processing tick {tick.symbol}: {e}")
+                self.performance_metrics['error_count'] += 1
+                return None
+
+        # Stream processing with memory efficiency
+        async for patterns in self.stream_processor.process_stream(
+            stream=tick_stream,
+            processor=process_tick,
+            enable_backpressure=True
+        ):
+            if patterns:
+                yield patterns
+
+    async def process_orderbook_stream(self, orderbook_stream: AsyncIterator[OrderBookSnapshot]) -> AsyncIterator[MarketMetrics]:
+        """
+        Process stream of orderbook data with memory efficiency
+
+        Args:
+            orderbook_stream: Async iterator of orderbook snapshots
+
+        Yields:
+            MarketMetrics: Market metrics from analysis
+        """
+        async def process_orderbook(orderbook: OrderBookSnapshot) -> Optional[MarketMetrics]:
+            """Process single orderbook and return metrics"""
+            if orderbook.symbol not in self.symbol_subscriptions:
+                return None
+
+            try:
+                # Add to circular buffer
+                self.orderbook_buffers[orderbook.symbol].append(orderbook)
+
+                # Analyze order book
+                metrics = self.orderbook_analyzer.analyze_orderbook(orderbook)
+
+                # Update liquidity profile
+                self.liquidity_profiler.update_profile(
+                    orderbook.symbol,
+                    pd.Timestamp(orderbook.timestamp),
+                    metrics
+                )
+
+                # Update metrics
+                self.performance_metrics['processed_orderbooks'] += 1
+
+                return metrics
+
+            except Exception as e:
+                self.logger.error(f"Error processing orderbook {orderbook.symbol}: {e}")
+                self.performance_metrics['error_count'] += 1
+                return None
+
+        # Stream processing with memory efficiency
+        async for metrics in self.stream_processor.process_stream(
+            stream=orderbook_stream,
+            processor=process_orderbook,
+            enable_backpressure=True
+        ):
+            if metrics:
+                yield metrics
+
+    async def batch_process_symbols_parallel(self, symbols: List[str], operation: str) -> Dict[str, Any]:
+        """
+        Process operation on multiple symbols in parallel
+
+        Args:
+            symbols: List of symbols to process
+            operation: Operation type ('refresh', 'analyze', 'cleanup')
+
+        Returns:
+            Dictionary with results per symbol
+        """
+        if not self.enable_parallel_processing or not self.batch_processor:
+            # Fall back to sequential processing
+            results = {}
+            for symbol in symbols:
+                try:
+                    if operation == 'refresh':
+                        results[symbol] = await self.get_market_data(symbol, force_refresh=True)
+                    elif operation == 'analyze':
+                        results[symbol] = await self._analyze_symbol_comprehensive(symbol)
+                    elif operation == 'cleanup':
+                        results[symbol] = await self._cleanup_symbol_data(symbol)
+                except Exception as e:
+                    results[symbol] = {'error': str(e)}
+            return results
+
+        async def process_symbol(symbol: str) -> tuple[str, Any]:
+            """Process single symbol operation"""
+            try:
+                if operation == 'refresh':
+                    result = await self.get_market_data(symbol, force_refresh=True)
+                elif operation == 'analyze':
+                    result = await self._analyze_symbol_comprehensive(symbol)
+                elif operation == 'cleanup':
+                    result = await self._cleanup_symbol_data(symbol)
+                else:
+                    raise ValueError(f"Unknown operation: {operation}")
+
+                return symbol, result
+
+            except Exception as e:
+                return symbol, {'error': str(e)}
+
+        # Process symbols in parallel batches
+        batch_result = await self.batch_processor.process_batch(
+            items=symbols,
+            processor=process_symbol,
+            return_exceptions=True
+        )
+
+        # Aggregate results
+        results = {}
+        for result in batch_result.successful:
+            if isinstance(result, tuple) and len(result) == 2:
+                symbol, data = result
+                results[symbol] = data
+
+        for symbol, error in batch_result.failed:
+            results[symbol] = {'error': str(error)}
+
+        self.logger.info(
+            f"Batch processed {len(symbols)} symbols: "
+            f"{batch_result.success_count} successful, {batch_result.failure_count} failed"
+        )
+
+        return results
+
+    async def _analyze_symbol_comprehensive(self, symbol: str) -> Dict[str, Any]:
+        """Comprehensive analysis for a symbol"""
+        if symbol not in self.symbol_subscriptions:
+            return {'error': 'Symbol not subscribed'}
+
+        # Get recent data from circular buffers
+        recent_ticks = list(self.tick_buffers[symbol])
+        recent_orderbooks = list(self.orderbook_buffers[symbol])
+
+        # Analyze patterns in recent data
+        tick_analyzer = self.tick_analyzers[symbol]
+        patterns_summary = []
+
+        for tick in recent_ticks[-100:]:  # Last 100 ticks
+            patterns = tick_analyzer.process_tick(tick)
+            if patterns:
+                patterns_summary.append({
+                    'timestamp': tick.timestamp,
+                    'quote_stuffing': patterns.quote_stuffing,
+                    'layering': patterns.layering,
+                    'momentum_ignition': patterns.momentum_ignition,
+                    'ping_pong': patterns.ping_pong
+                })
+
+        # Analyze market metrics from recent orderbooks
+        metrics_summary = []
+        for orderbook in recent_orderbooks[-50:]:  # Last 50 orderbooks
+            metrics = self.orderbook_analyzer.analyze_orderbook(orderbook)
+            metrics_summary.append({
+                'timestamp': orderbook.timestamp,
+                'spread_bps': metrics.spread_bps,
+                'liquidity_score': metrics.liquidity_score,
+                'imbalance': metrics.imbalance
+            })
+
+        return {
+            'symbol': symbol,
+            'recent_ticks_count': len(recent_ticks),
+            'recent_orderbooks_count': len(recent_orderbooks),
+            'patterns_detected': len(patterns_summary),
+            'patterns_summary': patterns_summary[-10:],  # Last 10 patterns
+            'metrics_summary': metrics_summary[-10:],    # Last 10 metrics
+            'buffer_utilization': {
+                'tick_buffer': self.tick_buffers[symbol].utilization,
+                'orderbook_buffer': self.orderbook_buffers[symbol].utilization
+            }
+        }
+
+    async def _cleanup_symbol_data(self, symbol: str) -> Dict[str, Any]:
+        """Cleanup old data for a symbol"""
+        if symbol not in self.symbol_subscriptions:
+            return {'error': 'Symbol not subscribed'}
+
+        # Clear circular buffers (they auto-manage size)
+        tick_buffer_size_before = len(self.tick_buffers[symbol])
+        orderbook_buffer_size_before = len(self.orderbook_buffers[symbol])
+
+        # Reset aggregated data cache
+        if symbol in self.aggregated_data:
+            self.aggregated_data[symbol].orderbook_history.clear()
+            self.aggregated_data[symbol].tick_history.clear()
+            self.aggregated_data[symbol].metrics_history.clear()
+
+        return {
+            'symbol': symbol,
+            'tick_buffer_size_before': tick_buffer_size_before,
+            'orderbook_buffer_size_before': orderbook_buffer_size_before,
+            'cleanup_completed': True
+        }
+
+    def get_memory_efficient_summary(self) -> Dict[str, Any]:
+        """Get memory-efficient summary using circular buffers"""
+        memory_stats = self.memory_monitor.get_current_stats()
+
+        # Stream processor stats
+        stream_stats = self.stream_processor.get_stats()
+
+        # Buffer utilization stats
+        buffer_stats = {}
+        for symbol in self.symbol_subscriptions:
+            if symbol in self.tick_buffers and symbol in self.orderbook_buffers:
+                buffer_stats[symbol] = {
+                    'tick_buffer': self.tick_buffers[symbol].get_stats(),
+                    'orderbook_buffer': self.orderbook_buffers[symbol].get_stats()
+                }
+
+        # Processing performance with circular buffer
+        processing_times_list = list(self.performance_metrics['processing_times'])
+        avg_processing_time = (
+            sum(processing_times_list) / len(processing_times_list)
+            if processing_times_list else 0.0
+        )
+
+        summary = {
+            'memory_stats': {
+                'current_rss_mb': memory_stats.rss_mb,
+                'current_percent': memory_stats.percent,
+                'available_mb': memory_stats.available_mb
+            },
+            'stream_processing': stream_stats,
+            'buffer_utilization': buffer_stats,
+            'performance': {
+                'avg_processing_time_ms': avg_processing_time * 1000,
+                'total_processed_ticks': self.performance_metrics['processed_ticks'],
+                'total_processed_orderbooks': self.performance_metrics['processed_orderbooks'],
+                'error_count': self.performance_metrics['error_count']
+            }
+        }
+
+        # Add batch processor stats if available
+        if self.enable_parallel_processing and self.batch_processor:
+            summary['batch_processing'] = self.batch_processor.get_metrics()
+
+        # Add concurrent executor stats if available
+        if self.enable_parallel_processing and self.concurrent_executor:
+            summary['concurrent_execution'] = self.concurrent_executor.get_metrics()
+
+        return summary
+
+    async def cleanup_optimization_resources(self):
+        """Cleanup Phase 8 optimization resources"""
+        try:
+            # Shutdown concurrent executor if enabled
+            if self.enable_parallel_processing and self.concurrent_executor:
+                await self.concurrent_executor.shutdown(timeout=5.0)
+
+            # Clear all circular buffers
+            for symbol in self.symbol_subscriptions:
+                if symbol in self.tick_buffers:
+                    self.tick_buffers[symbol].clear()
+                if symbol in self.orderbook_buffers:
+                    self.orderbook_buffers[symbol].clear()
+
+            # Clear performance tracking buffer
+            if hasattr(self.performance_metrics['processing_times'], 'clear'):
+                self.performance_metrics['processing_times'].clear()
+
+            self.logger.info("Phase 8 optimization resources cleaned up successfully")
+
+        except Exception as e:
+            self.logger.error(f"Error during optimization resource cleanup: {e}")
