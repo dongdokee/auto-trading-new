@@ -13,9 +13,10 @@ from .base_strategy import BaseStrategy, StrategySignal, StrategyConfig
 from .regime_detector import NoLookAheadRegimeDetector
 from .strategy_matrix import StrategyMatrix, StrategyAllocation
 from .strategies import TrendFollowingStrategy, MeanReversionStrategy
+from src.core.patterns import BaseManager, LoggerFactory
 
 
-class StrategyManager:
+class StrategyManager(BaseManager):
     """
     Central coordinator for all trading strategies
 
@@ -27,13 +28,16 @@ class StrategyManager:
     - Handle strategy lifecycle and performance tracking
     """
 
-    def __init__(self, strategy_configs: Optional[List[StrategyConfig]] = None):
+    def __init__(self, strategy_configs: Optional[List[StrategyConfig]] = None, config: Optional[Dict[str, Any]] = None):
         """
         Initialize strategy manager
 
         Args:
             strategy_configs: List of strategy configurations. If None, uses defaults.
+            config: Manager configuration
         """
+        super().__init__("StrategyManager", config)
+
         # Core components
         self.regime_detector = NoLookAheadRegimeDetector()
         self.strategy_matrix = StrategyMatrix()
@@ -50,11 +54,26 @@ class StrategyManager:
             self._add_strategy(config)
 
         # Signal aggregation settings
-        self.min_strategy_agreement = 0.6  # Minimum agreement threshold for signals
-        self.max_position_size = 1.0  # Maximum position size multiplier
+        self.min_strategy_agreement = self.config.get('min_strategy_agreement', 0.6)  # Minimum agreement threshold for signals
+        self.max_position_size = self.config.get('max_position_size', 1.0)  # Maximum position size multiplier
 
         # Performance tracking
         self.signal_history: List[Dict[str, Any]] = []
+
+        # Setup logger
+        self.logger = LoggerFactory.get_strategy_logger("StrategyManager")
+
+    async def _do_initialize(self) -> None:
+        """Initialize strategy manager"""
+        self.logger.info("Initializing strategy manager with {} strategies".format(len(self.strategies)))
+
+    async def _do_start(self) -> None:
+        """Start strategy manager"""
+        self.logger.info("Starting strategy manager")
+
+    async def _do_stop(self) -> None:
+        """Stop strategy manager"""
+        self.logger.info("Stopping strategy manager")
 
     def _get_default_configs(self) -> List[StrategyConfig]:
         """Get default strategy configurations"""

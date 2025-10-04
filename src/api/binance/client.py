@@ -12,6 +12,7 @@ from aiohttp import ClientSession, ClientTimeout
 
 from src.api.base import BaseExchangeClient, ExchangeConfig, RateLimitManager, ConnectionError
 from src.execution.models import Order, OrderSide, OrderUrgency
+from src.core.patterns import LoggerFactory
 from .exceptions import BinanceAPIError, BinanceConnectionError, BinanceRateLimitError, BinanceOrderError
 
 
@@ -20,6 +21,8 @@ class BinanceClient(BaseExchangeClient):
 
     def __init__(self, config: ExchangeConfig):
         super().__init__(config)
+        self.name = "BinanceClient"
+        self.logger = LoggerFactory.get_api_logger("binance")
 
         # API endpoints
         self.testnet_base_url = "https://testnet.binancefuture.com"
@@ -33,33 +36,28 @@ class BinanceClient(BaseExchangeClient):
         # HTTP session
         self.session: Optional[ClientSession] = None
 
-    async def connect(self) -> None:
-        """Establish connection to Binance API"""
+    async def _create_exchange_connection(self) -> ClientSession:
+        """Create HTTP session for Binance API"""
+        # Create HTTP session with threaded resolver to avoid aiodns issues on Windows
+        timeout = ClientTimeout(total=self.config.timeout)
+        connector = aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())
+        session = ClientSession(timeout=timeout, connector=connector)
+        self.session = session
+        return session
+
+    async def _close_exchange_connection(self, connection: ClientSession) -> None:
+        """Close HTTP session"""
+        if connection:
+            await connection.close()
+        self.session = None
+
+    async def _test_connection(self, connection: ClientSession) -> bool:
+        """Test if Binance API is reachable"""
         try:
-            # Create HTTP session with threaded resolver to avoid aiodns issues on Windows
-            timeout = ClientTimeout(total=self.config.timeout)
-            connector = aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())
-            self.session = ClientSession(timeout=timeout, connector=connector)
-
-            # Test connectivity
-            if await self._test_connectivity():
-                self._connected = True
-            else:
-                raise Exception("Connectivity test failed")
-
+            return await self._test_connectivity()
         except Exception as e:
-            raise ConnectionError(f"Failed to connect to Binance: {e}")
-
-    async def disconnect(self) -> None:
-        """Close connection to Binance API"""
-        if self.session:
-            await self.session.close()
-            self.session = None
-        self._connected = False
-
-    def is_connected(self) -> bool:
-        """Check if client is connected"""
-        return self._connected
+            self.logger.error(f"Connection test failed: {e}")
+            return False
 
     async def submit_order(self, order: Order) -> Dict[str, Any]:
         """Submit an order to Binance"""

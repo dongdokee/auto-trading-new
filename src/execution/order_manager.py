@@ -4,9 +4,10 @@ import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 import heapq
 from src.execution.models import Order, OrderStatus
+from src.core.patterns import BaseManager, LoggerFactory
 
 
 @dataclass
@@ -24,17 +25,39 @@ class OrderInfo:
     timeout_reason: Optional[str] = None
 
 
-class OrderManager:
+class OrderManager(BaseManager):
     """Order lifecycle management and tracking"""
 
-    def __init__(self):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__("OrderManager", config)
+
+        # Order tracking
         self.active_orders: Dict[str, OrderInfo] = {}
         self.order_history: List[OrderInfo] = []
-        self.max_order_age: int = 300  # 5 minutes default
-        self.max_active_orders: int = 100  # Default limit
-        self.max_attempts: int = 5  # Default max attempts
-        self.max_history_size: int = 1000  # Default history limit
+
+        # Configuration with defaults
+        self.max_order_age: int = self.config.get('max_order_age', 300)  # 5 minutes default
+        self.max_active_orders: int = self.config.get('max_active_orders', 100)  # Default limit
+        self.max_attempts: int = self.config.get('max_attempts', 5)  # Default max attempts
+        self.max_history_size: int = self.config.get('max_history_size', 1000)  # Default history limit
+
         self._lock = asyncio.Lock()
+        self.logger = LoggerFactory.get_execution_logger()
+
+    async def _do_initialize(self) -> None:
+        """Initialize order manager"""
+        self.logger.info("Initializing order manager")
+        # Any initialization logic can go here
+
+    async def _do_start(self) -> None:
+        """Start order manager"""
+        self.logger.info("Starting order manager")
+        # Start background tasks like cleanup if needed
+
+    async def _do_stop(self) -> None:
+        """Stop order manager"""
+        self.logger.info("Stopping order manager")
+        # Clean up any background tasks
 
     async def submit_order(self, order: Order) -> str:
         """Submit a new order and return unique order ID"""

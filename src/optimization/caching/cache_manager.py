@@ -20,11 +20,10 @@ except ImportError:
     redis = None
 
 from .models import CacheConfig, CacheEntry, CacheStats, CacheError
+from src.core.patterns import BaseConnectionManager, LoggerFactory
 
-logger = logging.getLogger(__name__)
 
-
-class CacheManager:
+class CacheManager(BaseConnectionManager):
     """
     Comprehensive cache manager with Redis backend.
 
@@ -42,50 +41,47 @@ class CacheManager:
         if redis is None:
             raise CacheError("redis package is required for cache functionality")
 
+        super().__init__(name="CacheManager")
         self.config = config
         self.redis_client: Optional[redis.Redis] = None
         self.connection_pool: Optional[redis.ConnectionPool] = None
-        self.is_connected = False
         self.stats = CacheStats()
+        self.logger = LoggerFactory.get_logger("cache_manager")
 
-    async def connect(self) -> None:
-        """Connect to Redis server."""
-        try:
-            # Create connection pool
-            self.connection_pool = redis.ConnectionPool(
-                host=self.config.redis_host,
-                port=self.config.redis_port,
-                db=self.config.redis_db,
-                password=self.config.redis_password,
-                max_connections=self.config.connection_pool_size,
-                decode_responses=False  # We handle encoding/decoding manually
-            )
+    async def _create_connection(self) -> redis.Redis:
+        """Create Redis connection."""
+        # Create connection pool
+        self.connection_pool = redis.ConnectionPool(
+            host=self.config.redis_host,
+            port=self.config.redis_port,
+            db=self.config.redis_db,
+            password=self.config.redis_password,
+            max_connections=self.config.connection_pool_size,
+            decode_responses=False  # We handle encoding/decoding manually
+        )
 
-            # Create Redis client
-            self.redis_client = redis.Redis(connection_pool=self.connection_pool)
+        # Create Redis client
+        self.redis_client = redis.Redis(connection_pool=self.connection_pool)
+        return self.redis_client
 
-            # Test connection
-            await self.redis_client.ping()
-            self.is_connected = True
-
-            logger.info(f"Connected to Redis at {self.config.redis_host}:{self.config.redis_port}")
-
-        except Exception as e:
-            self.is_connected = False
-            raise CacheError(f"Failed to connect to Redis: {e}")
-
-    async def disconnect(self) -> None:
-        """Disconnect from Redis server."""
-        if self.redis_client:
-            await self.redis_client.close()
-            self.redis_client = None
-
+    async def _close_connection(self, connection: redis.Redis) -> None:
+        """Close Redis connection."""
+        if connection:
+            await connection.close()
         if self.connection_pool:
             await self.connection_pool.disconnect()
-            self.connection_pool = None
+        self.redis_client = None
+        self.connection_pool = None
 
-        self.is_connected = False
-        logger.info("Disconnected from Redis")
+    async def _test_connection(self, connection: redis.Redis) -> bool:
+        """Test Redis connection."""
+        try:
+            await connection.ping()
+            self.logger.info(f"Connected to Redis at {self.config.redis_host}:{self.config.redis_port}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Redis connection test failed: {e}")
+            return False
 
     async def _ensure_connected(self) -> None:
         """Ensure Redis connection is active."""

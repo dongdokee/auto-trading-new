@@ -137,7 +137,16 @@
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.integration.orchestrator import TradingOrchestrator, TradingState, OrchestratorConfig; print(''Direct import from orchestrator module successful'')\")",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.hyperparameter_tuner import HyperparameterTuner, ParameterSpace, OptimizationResult; print(''Backward compatibility import successful'')\")",
       "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.tuner import HyperparameterTuner, ParameterSpace, OptimizationResult; print(''Direct import from tuner module successful'')\")",
-      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_hyperparameter_tuner.py --tb=no -q)"
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_hyperparameter_tuner.py --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/ -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/test_logging.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/test_manager.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/test_connection.py -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/ -v --tb=short)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_core/test_patterns/ -v --tb=no)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_api/ --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_execution/ --tb=no -q)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_strategy_engine/ --tb=no -q)"
     ],
     "deny": [],
     "ask": []

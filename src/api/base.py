@@ -7,10 +7,12 @@ from datetime import datetime, timedelta
 from enum import Enum
 import asyncio
 import time
+import warnings
 
 from src.execution.models import Order, OrderSide, OrderUrgency
+from src.core.patterns import BaseConnectionManager, LoggerFactory
 
-
+# Keep old ConnectionError for backward compatibility
 class ConnectionError(Exception):
     """Exception raised when connection operations fail"""
     pass
@@ -37,21 +39,30 @@ class ExchangeConfig:
             raise ValueError("API secret must be at least 8 characters")
 
 
-class BaseExchangeClient(ABC):
+class BaseExchangeClient(BaseConnectionManager):
     """Abstract base class for exchange API clients"""
 
     def __init__(self, config: ExchangeConfig):
+        super().__init__(name="ExchangeClient")
         self.config = config
-        self._connected = False
+        self.logger = LoggerFactory.get_api_logger("exchange")
+
+    async def _create_connection(self) -> Any:
+        """Create exchange connection - implemented by subclasses"""
+        return await self._create_exchange_connection()
+
+    async def _close_connection(self, connection: Any) -> None:
+        """Close exchange connection - implemented by subclasses"""
+        await self._close_exchange_connection(connection)
 
     @abstractmethod
-    async def connect(self) -> None:
-        """Establish connection to the exchange"""
+    async def _create_exchange_connection(self) -> Any:
+        """Create the actual exchange connection"""
         pass
 
     @abstractmethod
-    async def disconnect(self) -> None:
-        """Close connection to the exchange"""
+    async def _close_exchange_connection(self, connection: Any) -> None:
+        """Close the actual exchange connection"""
         pass
 
     @abstractmethod
@@ -125,6 +136,7 @@ class RateLimitManager:
         self.tokens = requests_per_minute
         self.last_refill = time.time()
         self.requests_made = 0
+        self.logger = LoggerFactory.get_logger("rate_limiter")
 
     def can_make_request(self) -> bool:
         """Check if a request can be made within rate limits"""
@@ -164,30 +176,29 @@ class RateLimitManager:
             self.requests_made = 0
 
 
-class ConnectionManager:
-    """Manages connection state and lifecycle"""
+# Deprecated: Use BaseConnectionManager from src.core.patterns instead
+class ConnectionManager(BaseConnectionManager):
+    """
+    Manages connection state and lifecycle.
+
+    DEPRECATED: Use BaseConnectionManager from src.core.patterns instead.
+    This class is kept for backward compatibility only.
+    """
 
     def __init__(self):
-        self._connected = False
-        self._connection_factory = self._default_connection_factory
+        warnings.warn(
+            "ConnectionManager is deprecated. Use BaseConnectionManager from src.core.patterns instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(name="DeprecatedConnectionManager")
 
-    async def connect(self) -> None:
-        """Establish connection"""
-        try:
-            await self._connection_factory()
-            self._connected = True
-        except Exception as e:
-            raise ConnectionError(f"Failed to connect: {e}")
-
-    async def disconnect(self) -> None:
-        """Close connection"""
-        self._connected = False
-
-    def is_connected(self) -> bool:
-        """Check if currently connected"""
-        return self._connected
-
-    async def _default_connection_factory(self) -> None:
+    async def _create_connection(self) -> Any:
         """Default connection factory - override in subclasses"""
         # Simulate connection establishment
         await asyncio.sleep(0.001)
+        return "mock_connection"
+
+    async def _close_connection(self, connection: Any) -> None:
+        """Default disconnection - override in subclasses"""
+        pass
