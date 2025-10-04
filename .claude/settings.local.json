@@ -128,7 +128,16 @@
       "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -c \"from src.execution.execution_algorithms import ExecutionAlgorithms; print(''Import successful'')\")",
       "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_execute_twap_with_optimal_duration_calculation -v)",
       "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_execute_vwap_following_volume_profile -v)",
-      "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_implement_adaptive_execution_with_multiple_signals -v)"
+      "Bash(/c/Users/dongd/anaconda3/envs/autotrading/python.exe -m pytest tests/unit/test_execution/test_execution_algorithms.py::TestExecutionAlgorithms::test_should_implement_adaptive_execution_with_multiple_signals -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.integration.trading_orchestrator import TradingOrchestrator, TradingState, OrchestratorConfig; print(''Import successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/integration/test_system_integration/test_complete_workflow.py -k TradingOrchestrator -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/integration/test_system_integration/test_complete_workflow.py::TestCompleteWorkflow::test_should_orchestrate_complete_trading_workflow -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/integration/test_system_integration/test_complete_workflow.py --collect-only)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/integration/test_system_integration/test_complete_workflow.py::TestCompleteWorkflow::test_complete_end_to_end_workflow -v)",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.integration.orchestrator import TradingOrchestrator, TradingState, OrchestratorConfig; print(''Direct import from orchestrator module successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.hyperparameter_tuner import HyperparameterTuner, ParameterSpace, OptimizationResult; print(''Backward compatibility import successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -c \"from src.optimization.tuner import HyperparameterTuner, ParameterSpace, OptimizationResult; print(''Direct import from tuner module successful'')\")",
+      "Bash(\"/c/Users/dongd/anaconda3/envs/autotrading/python.exe\" -m pytest tests/unit/test_optimization/test_hyperparameter_tuner.py --tb=no -q)"
     ],
     "deny": [],
     "ask": []
