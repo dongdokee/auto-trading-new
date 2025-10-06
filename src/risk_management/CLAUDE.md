@@ -353,9 +353,12 @@ if stop_reason:
 **For complete environment commands**: 📋 `@PROJECT_STRUCTURE.md`
 
 ```bash
+# Activate development environment
+conda activate autotrading-dev
+
 # Risk Management specific tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/test_risk_management_integration.py -v
+python -m pytest tests/unit/test_risk_management/ -v
+python -m pytest tests/integration/test_risk_management_integration.py -v
 ```
 
 ## 🎉 **PHASE 1.2 COMPLETED** - Full Risk Management Module 🚀

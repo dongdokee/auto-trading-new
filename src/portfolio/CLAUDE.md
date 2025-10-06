@@ -272,12 +272,15 @@ allocation_update = allocator.calculate_allocation_update(current_allocation)
 
 ### Test Execution Commands:
 ```bash
+# Activate development environment
+conda activate autotrading-dev
+
 # Portfolio optimization specific tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_portfolio/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/test_portfolio_optimization_integration.py -v
+python -m pytest tests/unit/test_portfolio/ -v
+python -m pytest tests/integration/test_portfolio_optimization_integration.py -v
 
 # Complete portfolio + strategy integration
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_portfolio/ tests/unit/test_strategy_engine/ -v
+python -m pytest tests/unit/test_portfolio/ tests/unit/test_strategy_engine/ -v
 ```
 
 ## 🔗 **System Integration**

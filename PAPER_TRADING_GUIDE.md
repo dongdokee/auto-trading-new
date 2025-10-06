@@ -47,11 +47,11 @@ Paper Trading은 실제 돈을 사용하지 않고 가상의 자본으로 거래
 ### 필요한 패키지
 
 ```bash
-# 가상환경 활성화 (이미 설정되어 있음)
+# 프로덕션 가상환경 활성화
 conda activate autotrading
 
-# 필요한 패키지 설치 (이미 설치되어 있어야 함)
-pip install aiohttp websockets pandas numpy
+# 필요한 패키지 설치
+pip install -r requirements.txt
 ```
 
 ## 🏦 Binance Testnet 계정 설정
@@ -152,6 +152,9 @@ paper_trading:
 ### 기본 실행
 
 ```bash
+# 프로덕션 환경 활성화
+conda activate autotrading
+
 # Paper trading 시스템 시작
 python scripts/paper_trading.py
 ```
@@ -159,6 +162,9 @@ python scripts/paper_trading.py
 ### 커스텀 설정으로 실행
 
 ```bash
+# 프로덕션 환경 활성화
+conda activate autotrading
+
 # 특정 설정 파일 사용
 python scripts/paper_trading.py config/my_custom_config.yaml
 ```
@@ -310,6 +316,9 @@ export BINANCE_TESTNET_API_SECRET="your_secret_here"
 
 **해결 방법**:
 ```bash
+# 프로덕션 환경 활성화
+conda activate autotrading
+
 # 1. 디버그 모드로 실행
 LOG_LEVEL=DEBUG python scripts/paper_trading.py
 

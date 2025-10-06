@@ -74,9 +74,12 @@ result = [module_class].[key_method]([parameters])
 **For complete environment commands**: 📋 `@PROJECT_STRUCTURE.md`
 
 ```bash
+# Activate development environment
+conda activate autotrading-dev
+
 # [Module Name] specific tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_[module_name]/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/test_[module_name]_integration.py -v
+python -m pytest tests/unit/test_[module_name]/ -v
+python -m pytest tests/integration/test_[module_name]_integration.py -v
 ```
 
 ## 🎉 **PHASE [X.Y] COMPLETED** - [Module Title] 🚀

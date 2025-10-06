@@ -109,44 +109,90 @@ AutoTradingNew/
 
 ## 🚀 Development Environment Setup
 
+### Two Anaconda Environments
+
+This project uses two separate conda environments:
+
+#### 🔬 Development Environment: `autotrading-dev`
+- **Purpose**: Development, testing, code quality checks
+- **Python**: 3.10+
+- **Dependencies**: `requirements-dev.txt` (includes all production + dev packages)
+- **Use Cases**: Running tests, linting, type checking, code formatting
+
+#### 🚀 Production Environment: `autotrading`
+- **Purpose**: Running trading systems (paper/live)
+- **Python**: 3.10+
+- **Dependencies**: `requirements.txt` (production packages only)
+- **Use Cases**: Paper trading, backtesting, live trading
+
+### Environment Setup
+
+```bash
+# Create and setup development environment
+conda create -n autotrading-dev python=3.10
+conda activate autotrading-dev
+pip install -r requirements-dev.txt
+
+# Create and setup production environment
+conda create -n autotrading python=3.10
+conda activate autotrading
+pip install -r requirements.txt
+```
+
 ### Essential Commands
 
-**For complete environment setup and troubleshooting**: See individual module CLAUDE.md files
+**For complete environment commands and workflows**: See `@QUICK_START.md`
 
-#### Environment Activation
+#### Testing Commands (Development Environment)
 ```bash
-# Activate Anaconda environment
-conda activate autotrading
+# Activate development environment
+conda activate autotrading-dev
 
-# Direct execution (required for Windows/conda issues)
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
-```
-
-#### Testing Commands
-```bash
 # Run all tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
+python -m pytest tests/ -v
 
 # Run specific module tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_[module]/ -v
+python -m pytest tests/unit/test_[module]/ -v
 
 # Run integration tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/ -v
+python -m pytest tests/integration/ -v
+
+# Run with coverage
+python -m pytest --cov=src tests/
 ```
 
-#### Production Commands
+#### Code Quality Commands (Development Environment)
 ```bash
+# Activate development environment
+conda activate autotrading-dev
+
+# Code formatting
+black src/ tests/
+isort src/ tests/
+
+# Type checking
+mypy src/
+```
+
+#### Production Commands (Production Environment)
+```bash
+# Activate production environment
+conda activate autotrading
+
 # Paper trading (safe validation)
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/paper_trading.py
+python scripts/paper_trading.py
 
 # Backtesting
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/backtest.py
+python scripts/backtest.py
 
 # Optimization suite
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/optimization_suite.py
+python scripts/optimization_suite.py
 
 # Monitoring dashboard
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/monitoring_dashboard.py
+python scripts/monitoring_dashboard.py
+
+# Live trading (use with caution!)
+python scripts/run_trading.py
 ```
 
 ### Key Dependencies

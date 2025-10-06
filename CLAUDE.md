@@ -107,10 +107,15 @@ When debugging complex issues:
 
 **For complete environment setup**: `@PROJECT_STRUCTURE.md` - All commands, troubleshooting, package management
 
-**Critical Environment Note**: Must use direct paths due to conda activation issues
+**Environment Strategy**: Two separate conda environments for development and production
 ```bash
-# ✅ REQUIRED: Direct path execution
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
+# Development environment (testing, linting, etc.)
+conda activate autotrading-dev
+python -m pytest tests/ -v
+
+# Production environment (paper trading, backtesting, live trading)
+conda activate autotrading
+python scripts/paper_trading.py
 ```
 
 ## Documentation Guidelines ⭐ DUPLICATION PREVENTION

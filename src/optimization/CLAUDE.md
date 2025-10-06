@@ -175,9 +175,12 @@ deployment_result = deployer.deploy_service(config)
 **For complete environment commands**: 📋 `@PROJECT_STRUCTURE.md`
 
 ```bash
+# Activate development environment
+conda activate autotrading-dev
+
 # Optimization module specific tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_optimization/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/test_optimization_integration.py -v
+python -m pytest tests/unit/test_optimization/ -v
+python -m pytest tests/integration/test_optimization_integration.py -v
 ```
 
 ## 🎉 **PHASE 6.1 COMPLETED** - Production Optimization Infrastructure 🚀

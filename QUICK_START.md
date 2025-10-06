@@ -2,134 +2,176 @@
 
 **Purpose**: Essential commands and workflows for immediate productivity
 
-**Last Updated**: 2025-09-19 (Created during documentation refactoring)
+**Last Updated**: 2025-10-06 (Updated: Environment separation strategy)
 
 ## Environment Setup
 
-### Critical Environment Note ⚠️
-**Standard conda activation fails** - must use direct paths to Python executable
+### Two Anaconda Environments
 
-**Environment Details**:
-- **Name**: `autotrading`
-- **Python**: 3.10.18
-- **Status**: ✅ Fully configured (222 tests passing)
+This project uses two separate conda environments for different purposes:
+
+#### 🔬 **Development Environment**: `autotrading-dev`
+- **Purpose**: Development, testing, code quality checks
+- **Packages**: Production packages + development tools (pytest, black, mypy, etc.)
+- **Setup**: `pip install -r requirements-dev.txt`
+
+#### 🚀 **Production Environment**: `autotrading`
+- **Purpose**: Running live/paper trading systems
+- **Packages**: Production packages only (minimal dependencies)
+- **Setup**: `pip install -r requirements.txt`
 
 **For complete environment details**: `@PROJECT_STRUCTURE.md`
 
 ## Essential Commands
 
-### ✅ Testing Commands (Most Used)
+### ✅ Testing Commands (Development Environment)
 
 ```bash
+# Activate development environment
+conda activate autotrading-dev
+
 # Run all tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
+python -m pytest tests/ -v
 
 # Run specific module tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_strategy_engine/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_portfolio/ -v
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/ -v
+python -m pytest tests/unit/test_risk_management/ -v
+python -m pytest tests/unit/test_strategy_engine/ -v
+python -m pytest tests/unit/test_portfolio/ -v
+python -m pytest tests/integration/ -v
 
 # Run with coverage
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest --cov=src tests/
+python -m pytest --cov=src tests/
 ```
 
 ### 📦 Package Management
 
 ```bash
-# Install packages (ALWAYS use direct pip path)
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package_name
+# For development environment
+conda activate autotrading-dev
+pip install -r requirements-dev.txt
+
+# For production environment
+conda activate autotrading
+pip install -r requirements.txt
 
 # Check installed packages
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pip list
+pip list
 
 # Verify environment
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" --version
+python --version
 ```
 
-### 🎨 Code Quality
+### 🎨 Code Quality (Development Environment)
 
 ```bash
-# Code formatting (when installed)
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/black.exe" src/ tests/
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/isort.exe" src/ tests/
+# Activate development environment
+conda activate autotrading-dev
 
-# Linting (when installed)
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/flake8.exe" src/ tests/
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/mypy.exe" src/
+# Code formatting
+black src/ tests/
+isort src/ tests/
+
+# Linting
+mypy src/
 ```
 
-### 🚀 System Execution (Future)
+### 🚀 System Execution (Production Environment)
 
 ```bash
-# Main trading system (Phase 4+)
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/run_trading.py
+# Activate production environment
+conda activate autotrading
+
+# Paper trading (recommended for testing)
+python scripts/paper_trading.py
 
 # Backtesting
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/backtest.py
+python scripts/backtest.py
 
-# Paper trading
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" scripts/paper_trading.py
+# Live trading (use with caution!)
+python scripts/run_trading.py
 ```
 
 ## Development Workflow
 
 ### TDD Workflow (Red → Green → Refactor)
-1. **Write failing test** for new functionality
-2. **Run test** to confirm it fails
-3. **Write minimal code** to make test pass
-4. **Run all tests** to ensure no regressions
-5. **Refactor** if needed (keep tests passing)
-6. **Commit** with clear message
+1. **Activate dev environment**: `conda activate autotrading-dev`
+2. **Write failing test** for new functionality
+3. **Run test** to confirm it fails
+4. **Write minimal code** to make test pass
+5. **Run all tests** to ensure no regressions
+6. **Refactor** if needed (keep tests passing)
+7. **Commit** with clear message
 
 **Complete TDD methodology**: `@docs/augmented-coding.md`
 
 ### Typical Development Session
 
 ```bash
-# 1. Check current status
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/ -v
+# 1. Activate development environment
+conda activate autotrading-dev
 
-# 2. Work on specific module (example: risk management)
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/unit/test_risk_management/ -v
+# 2. Check current status
+python -m pytest tests/ -v
 
-# 3. Run integration tests
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest tests/integration/ -v
+# 3. Work on specific module (example: risk management)
+python -m pytest tests/unit/test_risk_management/ -v
 
-# 4. Format code before commit
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/black.exe" src/ tests/
+# 4. Run integration tests
+python -m pytest tests/integration/ -v
+
+# 5. Format code before commit
+black src/ tests/
+isort src/ tests/
 ```
 
 ## Troubleshooting Common Issues
 
 ### Issue 1: "python not recognized"
-**Solution**: Always use full path to autotrading environment
+**Solution**: Activate the appropriate conda environment first
 ```bash
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" --version
-# Should output: Python 3.10.18
+# For development
+conda activate autotrading-dev
+python --version
+
+# For production
+conda activate autotrading
+python --version
 ```
 
 ### Issue 2: Import errors
-**Solution**: Install in correct environment
+**Solution**: Ensure you have activated the correct environment and installed dependencies
 ```bash
-"/c/Users/dongd/anaconda3/envs/autotrading/Scripts/pip.exe" install package_name
+# For development
+conda activate autotrading-dev
+pip install -r requirements-dev.txt
+
+# For production
+conda activate autotrading
+pip install -r requirements.txt
 ```
 
 ### Issue 3: Tests not discovering
-**Solution**: Run from project root with explicit test discovery
+**Solution**: Activate dev environment and run from project root
 ```bash
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -m pytest --collect-only tests/
+conda activate autotrading-dev
+python -m pytest --collect-only tests/
 ```
 
 ### Issue 4: Environment verification
 **Quick check script**:
 ```bash
-"/c/Users/dongd/anaconda3/envs/autotrading/python.exe" -c "
+# Activate environment first
+conda activate autotrading-dev
+
+# Run verification
+python -c "
 import sys
 print(f'Python: {sys.version}')
 try:
     import numpy, pandas, scipy, ccxt, pydantic
     print('✅ Core packages: OK')
+    import pytest, black, mypy
+    print('✅ Dev packages: OK')
 except ImportError as e:
     print(f'❌ Missing: {e}')
 "
@@ -146,7 +188,7 @@ src/
 ├── core/                # ✅ COMPLETED (Phase 2.1-2.2)
 ├── backtesting/         # ✅ COMPLETED
 ├── utils/               # ✅ COMPLETED
-└── execution/           # 🚀 NEXT (Phase 4.1)
+└── execution/           # ✅ COMPLETED (Phase 4.1)
 
 tests/
 ├── unit/                # Module-specific tests
@@ -162,9 +204,9 @@ tests/
 
 ## Current Development Status
 
-**Phase Completed**: 3.3 (70% overall progress)
-**Tests Passing**: 222 tests (100%)
-**Next Priority**: Phase 4.1 - Order Execution Engine
+**Phase Completed**: 6.1 (100% overall progress)
+**Tests Passing**: 924+ tests (100%)
+**Status**: Production Ready with Paper Trading Validation
 
 **Key Completed Modules**:
 - ✅ Risk Management (RiskController, PositionSizer, PositionManager)
@@ -172,6 +214,12 @@ tests/
 - ✅ Portfolio Optimization (Markowitz + attribution)
 - ✅ Core Infrastructure (Database + configuration)
 - ✅ Backtesting Framework (Walk-forward validation)
+- ✅ Order Execution (Smart routing + execution algorithms)
+- ✅ API Integration (Binance + Paper trading)
+- ✅ System Integration (Event-driven orchestration)
+- ✅ Market Data Pipeline (Real-time analytics)
+- ✅ Production Optimization (8-component suite)
+- ✅ Enhanced Utilities (Logging + financial math)
 
 ## Getting Help
 
@@ -182,6 +230,6 @@ tests/
 
 ---
 
-**Quick Start Priority**: Get tests running → Understand current module → Follow TDD workflow → Reference documentation as needed
+**Quick Start Priority**: Activate environment → Get tests running → Understand current module → Follow TDD workflow → Reference documentation as needed
 
 **For detailed information, always reference the complete documentation rather than working from this quick reference.**
