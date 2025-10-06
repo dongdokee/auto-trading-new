@@ -2,7 +2,7 @@
 
 **Purpose**: Essential commands and workflows for immediate productivity
 
-**Last Updated**: 2025-10-06 (Updated: Environment separation strategy)
+**Last Updated**: 2025-01-07 (Updated: Fail-Fast paper trading error handling)
 
 ## Environment Setup
 
@@ -82,6 +82,8 @@ mypy src/
 conda activate autotrading
 
 # Paper trading (recommended for testing)
+# NOTE: Requires StrategyManager, BinanceExecutor, RiskController
+# Will fail immediately with detailed error if components missing
 python scripts/paper_trading.py
 
 # Backtesting
@@ -176,6 +178,32 @@ except ImportError as e:
     print(f'❌ Missing: {e}')
 "
 ```
+
+### Issue 5: Paper Trading Component Failures
+**Solution**: Paper trading now uses Fail-Fast principle - it will immediately exit with detailed error if critical components are missing
+
+**Example Error**:
+```
+======================================================================
+CRITICAL ERROR: StrategyManager Initialization Failed
+======================================================================
+
+Reason: Strategy engine module not available
+Error: No module named 'src.strategy_engine.strategy_manager'
+
+Paper trading cannot proceed without StrategyManager.
+
+Please ensure:
+  - Ensure all dependencies are installed: pip install -r requirements.txt
+  - Verify strategy engine module exists: src/strategy_engine/strategy_manager.py
+  - Check Python environment is properly configured
+======================================================================
+```
+
+**Critical Components** (all required for paper trading):
+- **StrategyManager**: Generates trading signals
+- **BinanceExecutor**: Executes orders and provides market data
+- **RiskController**: Validates position sizing and enforces risk limits
 
 ## Project Structure Quick Reference
 

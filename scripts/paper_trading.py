@@ -127,13 +127,20 @@ class PaperTradingSystem:
             # Initialize components
             await self._initialize_components()
 
+            # Validate critical components (Fail-Fast)
+            self._validate_critical_components()
+
             # Setup signal handlers
             self._setup_signal_handlers()
 
             print("Paper Trading System initialized successfully!")
+            print("All critical components ready: StrategyManager, BinanceExecutor, RiskController")
             if self.logger and hasattr(self.logger, 'info'):
-                self.logger.info("Paper trading system initialized")
+                self.logger.info("Paper trading system initialized with all critical components")
 
+        except SystemExit:
+            # Re-raise SystemExit to allow graceful exit
+            raise
         except Exception as e:
             print(f"Failed to initialize paper trading system: {e}")
             self.main_logger.error(f"Initialization failed: {e}")
@@ -231,6 +238,85 @@ class PaperTradingSystem:
             logging.basicConfig(level=logging.INFO)
             self.logger = self.main_logger
 
+    def _fail_with_error(self, component: str, reason: str, module_error: str, suggestions: list) -> None:
+        """
+        Print detailed error message and exit immediately (Fail-Fast principle)
+
+        Args:
+            component: Name of the component that failed
+            reason: High-level reason for failure
+            module_error: Technical error details
+            suggestions: List of actionable suggestions to fix the issue
+        """
+        error_message = f"""
+{'='*70}
+CRITICAL ERROR: {component} Initialization Failed
+{'='*70}
+
+Reason: {reason}
+Error: {module_error}
+
+Paper trading cannot proceed without {component}.
+
+Why this is critical:
+  - Cannot generate meaningful trading signals without strategy manager
+  - Cannot execute orders without exchange connection
+  - Cannot validate risk limits without risk controller
+  - Results would not reflect real trading behavior
+
+Please ensure:
+"""
+
+        for suggestion in suggestions:
+            error_message += f"  - {suggestion}\n"
+
+        error_message += f"\n{'='*70}\n"
+
+        print(error_message, file=sys.stderr)
+        self.main_logger.error(f"{component} initialization failed: {module_error}")
+
+        raise SystemExit(1)
+
+    def _validate_critical_components(self) -> None:
+        """
+        Validate that all critical components are initialized
+        Called at the end of initialize() to ensure system is ready
+        """
+        missing = []
+
+        if not self.strategy_manager:
+            missing.append("StrategyManager")
+
+        if not self.executor:
+            missing.append("BinanceExecutor")
+
+        if not self.risk_controller:
+            missing.append("RiskController")
+
+        if missing:
+            error_message = f"""
+{'='*70}
+CRITICAL ERROR: Missing Required Components
+{'='*70}
+
+The following critical components failed to initialize:
+  {', '.join(missing)}
+
+Paper trading requires ALL critical components to function properly.
+
+Component roles:
+  - StrategyManager: Generates trading signals based on market data
+  - BinanceExecutor: Executes orders and provides market data feed
+  - RiskController: Validates position sizing and enforces risk limits
+
+Please review initialization logs above for specific error messages.
+
+{'='*70}
+"""
+            print(error_message, file=sys.stderr)
+            self.main_logger.error(f"Critical components missing: {', '.join(missing)}")
+            raise SystemExit(1)
+
     async def _initialize_components(self) -> None:
         """Initialize all trading components"""
         try:
@@ -262,19 +348,25 @@ class PaperTradingSystem:
 
             if components_initialized:
                 print(f"Initialized components: {', '.join(components_initialized)}")
-            else:
-                print("No components initialized - running in simulation mode")
 
         except Exception as e:
             print(f"Component initialization error: {e}")
-            print("Continuing with available components...")
+            raise
 
     def _try_initialize_executor(self) -> bool:
-        """Try to initialize Binance executor"""
+        """Initialize Binance executor (REQUIRED for paper trading)"""
         try:
             if not BINANCE_AVAILABLE:
-                print("Binance API not available")
-                return False
+                self._fail_with_error(
+                    component="BinanceExecutor",
+                    reason="Binance API module not available",
+                    module_error="No module named 'src.api.binance.executor'",
+                    suggestions=[
+                        "Install required dependencies: pip install -r requirements.txt",
+                        "Verify Binance API module exists: src/api/binance/executor.py",
+                        "Check ccxt library is installed: pip install ccxt"
+                    ]
+                )
 
             binance_config = self.config.get('exchanges', {}).get('binance', {})
 
@@ -283,8 +375,17 @@ class PaperTradingSystem:
             api_secret = binance_config.get('api_secret', '')
 
             if not api_key or not api_secret:
-                print("Binance API keys not configured")
-                return False
+                self._fail_with_error(
+                    component="BinanceExecutor",
+                    reason="Binance API credentials not configured",
+                    module_error="Missing BINANCE_TESTNET_API_KEY or BINANCE_TESTNET_API_SECRET",
+                    suggestions=[
+                        "Create .env file with Binance Testnet credentials",
+                        "Get testnet API keys from: https://testnet.binancefuture.com",
+                        "Set environment variables: BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET",
+                        "Example .env file:\n    BINANCE_TESTNET_API_KEY=your_key_here\n    BINANCE_TESTNET_API_SECRET=your_secret_here"
+                    ]
+                )
 
             exchange_config = ExchangeConfig(
                 api_key=api_key,
@@ -298,10 +399,19 @@ class PaperTradingSystem:
             print("Binance executor initialized")
             return True
 
+        except SystemExit:
+            raise
         except Exception as e:
-            print(f"Executor initialization failed: {e}")
-            self.executor = None
-            return False
+            self._fail_with_error(
+                component="BinanceExecutor",
+                reason="Failed to instantiate BinanceExecutor",
+                module_error=str(e),
+                suggestions=[
+                    "Verify Binance Testnet API credentials are valid",
+                    "Check network connectivity to testnet.binancefuture.com",
+                    "Review configuration: config/trading.yaml"
+                ]
+            )
 
     def _try_initialize_order_manager(self) -> bool:
         """Try to initialize order manager"""
@@ -319,10 +429,18 @@ class PaperTradingSystem:
             return False
 
     def _try_initialize_risk_controller(self) -> bool:
-        """Try to initialize risk controller"""
+        """Initialize risk controller (REQUIRED for paper trading)"""
         try:
             if not RISK_AVAILABLE:
-                return False
+                self._fail_with_error(
+                    component="RiskController",
+                    reason="Risk management module not available",
+                    module_error="No module named 'src.risk_management.risk_management'",
+                    suggestions=[
+                        "Ensure all dependencies are installed: pip install -r requirements.txt",
+                        "Verify risk management module exists: src/risk_management/risk_management.py"
+                    ]
+                )
 
             initial_capital = float(self.config.get('paper_trading', {}).get('initial_balance', 1000))
             self.risk_controller = RiskController(
@@ -335,25 +453,52 @@ class PaperTradingSystem:
             print("Risk controller initialized")
             return True
 
+        except SystemExit:
+            raise
         except Exception as e:
-            print(f"Risk controller initialization failed: {e}")
-            self.risk_controller = None
-            return False
+            self._fail_with_error(
+                component="RiskController",
+                reason="Failed to instantiate RiskController",
+                module_error=str(e),
+                suggestions=[
+                    "Check configuration file: config/trading.yaml",
+                    "Verify risk management parameters are valid",
+                    "Review error logs for detailed traceback"
+                ]
+            )
 
     def _try_initialize_strategy_manager(self) -> bool:
-        """Try to initialize strategy manager"""
+        """Initialize strategy manager (REQUIRED for paper trading)"""
         try:
             if not STRATEGY_AVAILABLE:
-                return False
+                self._fail_with_error(
+                    component="StrategyManager",
+                    reason="Strategy engine module not available",
+                    module_error="No module named 'src.strategy_engine.strategy_manager'",
+                    suggestions=[
+                        "Ensure all dependencies are installed: pip install -r requirements.txt",
+                        "Verify strategy engine module exists: src/strategy_engine/strategy_manager.py",
+                        "Check Python environment is properly configured"
+                    ]
+                )
 
             self.strategy_manager = StrategyManager(config=self.config)
             print("Strategy manager initialized")
             return True
 
+        except SystemExit:
+            raise
         except Exception as e:
-            print(f"Strategy manager initialization failed: {e}")
-            self.strategy_manager = None
-            return False
+            self._fail_with_error(
+                component="StrategyManager",
+                reason="Failed to instantiate StrategyManager",
+                module_error=str(e),
+                suggestions=[
+                    "Check configuration file: config/trading.yaml",
+                    "Verify strategy parameters are correctly configured",
+                    "Review error logs for detailed traceback"
+                ]
+            )
 
     async def _setup_market_data(self) -> None:
         """Setup market data subscriptions"""
@@ -392,19 +537,23 @@ class PaperTradingSystem:
 
     async def run(self) -> None:
         """Main trading loop"""
+        # Runtime validation: ensure strategy manager is available
+        if not self.strategy_manager:
+            raise RuntimeError(
+                "StrategyManager is required for paper trading. "
+                "This should have been caught during initialization."
+            )
+
         self.running = True
         print("Starting paper trading session...")
         print(f"Initial Balance: ${self.virtual_balance:,.2f}")
+        print("Mode: Strategy-based trading (real strategies)")
         print("Monitoring market for trading opportunities...")
 
         try:
             while self.running:
-                # Generate trading signals
-                if self.strategy_manager:
-                    await self._process_trading_signals()
-                else:
-                    # Simple simulation mode if no strategy manager
-                    await self._run_simulation_mode()
+                # Process trading signals from strategy manager
+                await self._process_trading_signals()
 
                 # Generate periodic reports
                 await self._generate_periodic_report()
@@ -441,31 +590,6 @@ class PaperTradingSystem:
 
         except Exception as e:
             self.main_logger.error(f"Error processing trading signals: {e}")
-
-    async def _run_simulation_mode(self) -> None:
-        """Run basic simulation mode without strategy manager"""
-        try:
-            # Simple random simulation for demonstration
-            import random
-
-            if random.random() < 0.01:  # 1% chance per cycle
-                trading_pairs = self.config.get('trading', {}).get('trading_pairs', ['BTC/USDT'])
-                symbol = random.choice(trading_pairs).replace('/', '')
-
-                # Create a mock signal
-                mock_signal = {
-                    'should_trade': True,
-                    'side': random.choice(['BUY', 'SELL']),
-                    'strength': random.uniform(0.6, 1.0),
-                    'confidence': random.uniform(0.7, 1.0),
-                    'signal_count': 1
-                }
-
-                print(f"Simulation signal: {mock_signal['side']} {symbol}")
-                await self._execute_paper_trade(symbol, mock_signal)
-
-        except Exception as e:
-            self.main_logger.error(f"Error in simulation mode: {e}")
 
     def _aggregate_signals(self, signals: list) -> Dict[str, Any]:
         """Aggregate multiple strategy signals"""

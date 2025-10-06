@@ -1,6 +1,8 @@
 # Binance Testnet Paper Trading Setup Guide
 # Binance 테스트넷 모의매매 설정 가이드
 
+**Last Updated**: 2025-01-07 (Updated: Fail-Fast error handling)
+
 이 가이드는 Binance Testnet을 사용하여 실제 돈 없이 안전하게 트레이딩 전략을 테스트할 수 있는 완전한 paper trading 환경을 설정하는 방법을 설명합니다.
 
 ## 📋 목차
@@ -34,6 +36,7 @@ Paper Trading은 실제 돈을 사용하지 않고 가상의 자본으로 거래
 - ✅ **리스크 관리**: 실제와 동일한 리스크 관리 시스템
 - ✅ **성능 추적**: 실시간 수익률 및 거래 통계
 - ✅ **포괄적 로깅**: 모든 거래 활동 기록
+- ✅ **Fail-Fast 에러 처리**: 필수 컴포넌트 누락 시 즉시 명확한 에러 메시지
 
 ## 🛠️ 사전 준비사항
 
@@ -264,11 +267,59 @@ sqlite3 data/paper_trading.db
 
 ## 🔧 문제 해결
 
+### Fail-Fast 에러 처리 시스템 (2025-01-07 업데이트)
+
+Paper trading 시스템은 **Fail-Fast 원칙**을 적용하여, 필수 컴포넌트가 누락되었을 때 즉시 명확한 에러 메시지와 함께 종료됩니다.
+
+#### 필수 컴포넌트
+다음 3가지 컴포넌트는 paper trading에 **필수**입니다:
+
+1. **StrategyManager**: 거래 신호 생성
+2. **BinanceExecutor**: 주문 실행 및 시장 데이터 제공
+3. **RiskController**: 포지션 크기 검증 및 리스크 관리
+
+#### 컴포넌트 초기화 실패 시
+
+**증상**: 시스템이 즉시 종료되며 다음과 같은 에러 메시지 표시
+
+**예시 에러 메시지**:
+```
+======================================================================
+CRITICAL ERROR: StrategyManager Initialization Failed
+======================================================================
+
+Reason: Strategy engine module not available
+Error: No module named 'src.strategy_engine.strategy_manager'
+
+Paper trading cannot proceed without StrategyManager.
+
+Why this is critical:
+  - Cannot generate meaningful trading signals without strategy manager
+  - Cannot execute orders without exchange connection
+  - Cannot validate risk limits without risk controller
+  - Results would not reflect real trading behavior
+
+Please ensure:
+  - Ensure all dependencies are installed: pip install -r requirements.txt
+  - Verify strategy engine module exists: src/strategy_engine/strategy_manager.py
+  - Check Python environment is properly configured
+
+======================================================================
+```
+
+**해결 방법**:
+1. 에러 메시지의 "Please ensure" 섹션을 따라 문제 해결
+2. 필요한 패키지 설치: `pip install -r requirements.txt`
+3. 환경이 올바른지 확인: `conda activate autotrading`
+4. 모든 소스 파일이 존재하는지 확인
+
+**중요**: 시뮬레이션 모드 폴백이 제거되었습니다. Paper trading은 **반드시 실제 전략**으로 실행되어야 하며, 전략 없이는 실행되지 않습니다.
+
 ### 자주 발생하는 문제들
 
 #### 1. API 연결 실패
 
-**증상**: `Failed to connect to Binance API` 오류
+**증상**: `BinanceExecutor Initialization Failed` 에러
 
 **해결 방법**:
 ```bash
@@ -280,11 +331,46 @@ echo $BINANCE_TESTNET_API_SECRET
 ping testnet.binancefuture.com
 
 # 3. API 키 권한 확인 (Testnet 웹사이트에서)
+
+# 4. .env 파일 확인
+cat .env | grep BINANCE_TESTNET
 ```
 
-#### 2. 환경변수 로드 실패
+#### 2. 전략 엔진 초기화 실패
 
-**증상**: `Environment variable not found` 오류
+**증상**: `StrategyManager Initialization Failed` 에러
+
+**해결 방법**:
+```bash
+# 1. 전략 엔진 모듈 확인
+ls -la src/strategy_engine/strategy_manager.py
+
+# 2. 필요한 패키지 설치
+conda activate autotrading
+pip install -r requirements.txt
+
+# 3. 설정 파일 확인
+cat config/trading.yaml | grep -A 20 "strategies:"
+```
+
+#### 3. 리스크 관리 초기화 실패
+
+**증상**: `RiskController Initialization Failed` 에러
+
+**해결 방법**:
+```bash
+# 1. 리스크 관리 모듈 확인
+ls -la src/risk_management/risk_management.py
+
+# 2. 설정 파일에서 paper_trading 섹션 확인
+cat config/trading.yaml | grep -A 10 "paper_trading:"
+
+# 3. initial_balance 설정이 올바른지 확인
+```
+
+#### 4. 환경변수 로드 실패
+
+**증상**: API credentials not configured 에러
 
 **해결 방법**:
 ```bash
@@ -299,34 +385,25 @@ export BINANCE_TESTNET_API_KEY="your_key_here"
 export BINANCE_TESTNET_API_SECRET="your_secret_here"
 ```
 
-#### 3. WebSocket 연결 실패
+#### 5. 거래 신호가 생성되지 않음
 
-**증상**: `WebSocket connection failed` 오류
+**증상**: 시스템이 실행되지만 거래가 발생하지 않음 (정상 동작일 수 있음)
 
-**해결 방법**:
+**참고**: 이것은 **정상 동작**일 수 있습니다. 전략이 거래 조건을 만족하지 못하면 신호가 생성되지 않습니다.
+
+**확인 방법**:
 ```bash
-# 1. 방화벽 설정 확인
-# 2. 프록시 설정 확인
-# 3. 다른 네트워크에서 테스트
-```
+# 1. 시스템이 정상 초기화되었는지 확인
+# "All critical components ready" 메시지가 출력되어야 함
 
-#### 4. 거래 신호가 생성되지 않음
-
-**증상**: 시스템이 실행되지만 거래가 발생하지 않음
-
-**해결 방법**:
-```bash
-# 프로덕션 환경 활성화
-conda activate autotrading
-
-# 1. 디버그 모드로 실행
+# 2. 디버그 모드로 실행하여 전략 로직 확인
 LOG_LEVEL=DEBUG python scripts/paper_trading.py
-
-# 2. 전략 설정 확인
-grep -A 10 "strategies:" config/trading.yaml
 
 # 3. 시장 데이터 수신 확인
 grep "Market data" logs/paper_trading.log
+
+# 4. 전략 신호 생성 로직 확인
+grep "signal" logs/paper_trading.log
 ```
 
 ### 로그 레벨 조정

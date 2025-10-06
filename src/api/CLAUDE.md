@@ -5,6 +5,7 @@
 **Implementation Period**: Day 1-5 (Phase 4.2)
 **TDD Approach**: Comprehensive test-driven development with 40+ tests
 **Test Coverage**: Unit tests + Integration tests + End-to-end tests
+**Last Updated**: 2025-01-07 (Updated: Paper trading Fail-Fast implementation)
 
 ## 📋 Module Overview
 
@@ -88,11 +89,18 @@ Strategy Engine → Order → BinanceExecutor → BinanceClient → Binance API
 - **Auto-reconnection**: Seamless reconnection with subscription recovery
 - **Performance**: <1ms message processing latency
 
-### Paper Trading Support
+### Paper Trading Support (Updated 2025-01-07)
 - **Configuration**: `paper_trading: true` in exchange config
 - **Testnet Integration**: Automatic testnet URL routing
 - **Risk-free Testing**: Complete functionality without real money
 - **Performance Metrics**: Execution statistics and performance tracking
+- **Fail-Fast Validation**: Critical components validated on startup
+  - **StrategyManager**: Required for generating trading signals
+  - **BinanceExecutor**: Required for order execution and market data
+  - **RiskController**: Required for position sizing and risk management
+- **No Simulation Fallback**: Removed random signal simulation mode
+- **Detailed Error Messages**: Actionable guidance when components fail to initialize
+- **Component Validation**: `scripts/paper_trading.py` validates all critical components before starting
 
 ## 🧪 Test Suite Summary
 
@@ -163,7 +171,34 @@ is_connected = websocket.is_connected()
 
 ## 🚀 Usage Examples
 
-### Basic Paper Trading Setup
+### Paper Trading Script (Fail-Fast Implementation)
+```bash
+# Run paper trading system with all critical components
+conda activate autotrading
+python scripts/paper_trading.py
+
+# System will validate on startup:
+# ✅ StrategyManager initialized
+# ✅ BinanceExecutor initialized
+# ✅ RiskController initialized
+# ✅ All critical components ready
+
+# If any component fails, you'll see a detailed error:
+# ======================================================================
+# CRITICAL ERROR: BinanceExecutor Initialization Failed
+# ======================================================================
+#
+# Reason: Binance API credentials not configured
+# Error: Missing BINANCE_TESTNET_API_KEY or BINANCE_TESTNET_API_SECRET
+#
+# Please ensure:
+#   - Create .env file with Binance Testnet credentials
+#   - Get testnet API keys from: https://testnet.binancefuture.com
+#   - Set environment variables: BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET
+# ======================================================================
+```
+
+### Basic Paper Trading Setup (Programmatic)
 ```python
 from src.api.binance.executor import BinanceExecutor
 from src.core.config.models import ExchangeConfig
