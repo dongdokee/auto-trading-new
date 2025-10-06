@@ -113,7 +113,7 @@ pip install -r requirements.txt
 
 ```bash
 # 템플릿 파일을 복사하여 실제 환경변수 파일 생성
-cp .env.template .env
+cp .env.example .env
 ```
 
 ### 2단계: API 키 설정

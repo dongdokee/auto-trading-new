@@ -46,7 +46,7 @@ def check_environment():
         for var in missing_vars:
             print(f"   - {var}")
         print("\n📝 설정 방법:")
-        print("1. .env 파일 생성: cp .env.template .env")
+        print("1. .env 파일 생성: cp .env.example .env")
         print("2. .env 파일에서 API 키 설정")
         print("3. 또는 직접 환경변수 설정:")
         print(f"   export BINANCE_TESTNET_API_KEY='your_key'")
