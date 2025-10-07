@@ -72,6 +72,14 @@ except ImportError as e:
     LoggerFactory = None
     LOGGING_AVAILABLE = False
 
+try:
+    from src.utils.testnet_loader import TestnetParameterLoader
+    TESTNET_LOADER_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Testnet loader not available - {e}")
+    TestnetParameterLoader = None
+    TESTNET_LOADER_AVAILABLE = False
+
 
 class PaperTradingSystem:
     """
@@ -164,11 +172,14 @@ class PaperTradingSystem:
             if 'exchanges' in self.config and 'binance' in self.config['exchanges']:
                 self.config['exchanges']['binance']['testnet'] = True
 
+            # Load actual testnet parameters if available
+            testnet_params = await self._load_testnet_parameters()
+
             # Set paper trading defaults if not configured
             if 'paper_trading' not in self.config:
                 self.config['paper_trading'] = {
-                    'initial_balance': 1000.0,
-                    'commission_rate': 0.001,  # 0.1%
+                    'initial_balance': testnet_params['initial_balance'],
+                    'commission_rate': testnet_params['commission_rate'],
                     'slippage_simulation': True,
                     'max_slippage': 0.002,  # 0.2%
                     'latency_simulation': True,
@@ -176,12 +187,19 @@ class PaperTradingSystem:
                     'max_latency_ms': 50,
                     'report_interval_minutes': 15
                 }
+            else:
+                # Update with testnet values if not explicitly set
+                if 'initial_balance' not in self.config['paper_trading']:
+                    self.config['paper_trading']['initial_balance'] = testnet_params['initial_balance']
+                if 'commission_rate' not in self.config['paper_trading']:
+                    self.config['paper_trading']['commission_rate'] = testnet_params['commission_rate']
 
             # Override virtual balance if configured
             if 'initial_balance' in self.config['paper_trading']:
                 self.virtual_balance = Decimal(str(self.config['paper_trading']['initial_balance']))
 
             print(f"Configuration loaded - Starting balance: ${self.virtual_balance:,.2f}")
+            print(f"Commission rate: {self.config['paper_trading']['commission_rate']*100:.3f}%")
 
         except Exception as e:
             print(f"Failed to load configuration: {e}")
@@ -212,6 +230,51 @@ class PaperTradingSystem:
                     if line and not line.startswith('#') and '=' in line:
                         key, value = line.split('=', 1)
                         os.environ[key.strip()] = value.strip()
+
+    async def _load_testnet_parameters(self) -> Dict[str, Any]:
+        """Load actual parameters from Binance Testnet (REQUIRED)"""
+        if not TESTNET_LOADER_AVAILABLE:
+            raise RuntimeError(
+                "Testnet loader module not available. "
+                "Please ensure src/utils/testnet_loader.py exists and dependencies are installed."
+            )
+
+        # Get API credentials
+        api_key = os.getenv("BINANCE_TESTNET_API_KEY")
+        api_secret = os.getenv("BINANCE_TESTNET_API_SECRET")
+
+        if not api_key or not api_secret:
+            raise RuntimeError(
+                "Binance Testnet API credentials not found.\n\n"
+                "Paper trading requires valid testnet credentials to operate.\n"
+                "Please set the following environment variables in your .env file:\n"
+                "  - BINANCE_TESTNET_API_KEY\n"
+                "  - BINANCE_TESTNET_API_SECRET\n\n"
+                "Get your testnet API keys from: https://testnet.binancefuture.com/\n"
+            )
+
+        print("Loading parameters from Binance Testnet...")
+
+        try:
+            params = await TestnetParameterLoader.load_testnet_parameters(
+                api_key=api_key,
+                api_secret=api_secret
+            )
+
+            print(f"✓ Testnet balance loaded: ${params['initial_balance']:,.2f} USDT")
+            print(f"✓ Testnet commission rate: {params['commission_rate']*100:.3f}%")
+
+            return params
+
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load parameters from Binance Testnet: {e}\n\n"
+                "Paper trading requires successful testnet connection.\n"
+                "Please check:\n"
+                "  1. Your testnet API credentials are valid\n"
+                "  2. Network connectivity to testnet.binancefuture.com\n"
+                "  3. Your testnet account is active\n"
+            )
 
     def _setup_logging(self) -> None:
         """Setup comprehensive logging for paper trading"""
